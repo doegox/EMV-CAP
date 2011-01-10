@@ -73,8 +73,11 @@ class TLV():
         self.T = T
         self.L = L
         if T in TLVdict:
-            self.V = TLVdict[T]['parse'](V)
             self.name = TLVdict[T]['name']
+            if V is not None:
+                self.V = TLVdict[T]['parse'](V)
+            else:
+                self.V = None
         else:
             if V is not None:
                 self.V = ''.join(["%02X" % i for i in V])
@@ -88,6 +91,13 @@ class TLV():
             return tlv2 == self.name
         else:
             raise 'Comparison only with T as int or with name, sorry'
+    def __iter__(self):
+        return self.V.__iter__()
+    def get(self, name):
+        if name in self:
+            return self.V[self.V.index(name)]
+        else:
+            return None
     def __eq__(self, tlv2):
         return self.__cmp__(tlv2)
     def __repr__(self):
@@ -142,6 +152,8 @@ TLVdict = {
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F28:{'name':'issuer country code',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
+    0x5F2A:{'name':'Transaction Currency Code',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
     0x5F2C:{'name':'Cardholder nationality',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
     0x5F2D:{'name':'language preference',
@@ -166,14 +178,36 @@ TLVdict = {
             'parse':lambda x: TLVparser(x, False)},
     0x8E:  {'name':'cardholder verification method (CMV) list',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x91:  {'name':'issuer authentication data',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x94:  {'name':'application file locator',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x95:  {'name':'Terminal Verification Results',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9A:  {'name':'Transaction Date',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9C:  {'name':'Transaction Type',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F02:{'name':'Authorized Amount (AA)',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F03:{'name':'Other Amount',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F17:{'name':'PIN Retry Counter',
+            'parse':lambda x: x[0]},
+    0x9F1A:{'name':'Terminal Country Code',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F34:{'name':'cardholder verification method (cvm) results',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F37:{'name':'Unpredictable Number (UN)',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F38:{'name':'processing options dol (pdol)',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F42:{'name':'application currency code',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
     0x9F44:{'name':'application currency exponent',
-            'parse':lambda x :("%i: 0." % x) + ("0" * x)}, 
+            'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
+    0x9F4C:{'name':'ICC dynamic number',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F55:{'name':'Issuer Authentication Flag',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F56:{'name':'Issuer Authentication Indicator / IPB',

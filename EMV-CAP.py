@@ -3,6 +3,7 @@
 import sys
 import argparse
 import smartcard
+import getpass
 from EMVCAPcore import *
 from Crypto.Cipher import DES
 
@@ -87,6 +88,7 @@ def MyConnect(reader_match=None, debug=False):
     return connection
 
 def myTransmit(connection, CAPDU, debug=False):
+    fetch_more=False
     if debug:
         print "CAPDU:        " + CAPDU
     (RAPDU, sw1, sw2) = connection.transmit([ord(c) for c in CAPDU.decode('hex')])
@@ -94,12 +96,16 @@ def myTransmit(connection, CAPDU, debug=False):
         print "RAPDU(%02X %02X): " % (sw1, sw2) + ''.join(["%02X" % i for i in RAPDU])
     if sw1 == 0x61: # More bytes available
         CAPDU='00C00000'+("%02X" % sw2)
+        fetch_more=True
+    if sw1 == 0x6c: # Wrong length
+        CAPDU=CAPDU[:4*2]+("%02X" % sw2)
+        fetch_more=True
+    if fetch_more:
         if debug:
             print "CAPDU:        " + CAPDU
         (RAPDU, sw1, sw2) = connection.transmit([ord(c) for c in CAPDU.decode('hex')])
         if debug:
             print "RAPDU(%02X %02X): " % (sw1, sw2) + ''.join(["%02X" % i for i in RAPDU])
-    # TODO handle sw1=0x6c -> fix CAPDU with length = sw2
     return (RAPDU, sw1, sw2)
 
 parser = argparse.ArgumentParser(description='EMV-CAP calculator',
@@ -155,7 +161,8 @@ if connection is None:
     sys.exit()
 
 # ATR
-print "ATR: " + ''.join(["%02X" % i for i in connection.getATR()])
+if args.debug:
+    print "ATR:          " + ''.join(["%02X" % i for i in connection.getATR()])
 
 # Select Application:
 current_app=None
@@ -168,39 +175,92 @@ for app in ApplicationsList:
             parsedRAPDU = TLVparser(RAPDU)
         if args.verbose:
             print "Application detected: " + app['description']
-            print ''.join(["%02X" % i for i in RAPDU])
-            print TLVparser(RAPDU)
+            if args.debug:
+                print ''.join(["%02X" % i for i in RAPDU])
+                print TLVparser(RAPDU)
 if current_app is None:
     print 'No suitable app found, exiting'
     sys.exit()
-if parsedRAPDU[0].name == 'fci template':
-    fci_template = parsedRAPDU[0].V
-    if 'fci proprietary template' in fci_template:
-        fci_proprietary_template = fci_template[fci_template.index('fci proprietary template')].V
-        if 0xBF0C in fci_proprietary_template:
-            fci_issuer_discretionary_data = fci_proprietary_template[fci_proprietary_template.index(0xBF0C)].V
-            if 0x9F55 in fci_issuer_discretionary_data:
-                issuer_authentication_flag = fci_issuer_discretionary_data[fci_issuer_discretionary_data.index(0x9F55)].V
-                psn_to_be_used = (ord(issuer_authentication_flag.decode('hex')) & 0x40) != 0
-if 'psn_to_be_used' in vars() and psn_to_be_used:
-    print 'Warning card tells to use PSN but I dont know how'
+assert 0x6F in parsedRAPDU
+fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
+if 0xA5 in fci_template:
+    fci_proprietary_template = fci_template.get(0xA5)
+    if 0xBF0C in fci_proprietary_template:
+        fci_issuer_discretionary_data = fci_proprietary_template.get(0xBF0C)
+        if 0x9F55 in fci_issuer_discretionary_data:
+            issuer_authentication_flag = fci_issuer_discretionary_data.get(0x9F55)
+            psn_to_be_used = (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
+            if psn_to_be_used:
+                print 'Warning card tells to use PSN but I dont know how'
 
 # Initiate transaction / Get Processing Options:
+if args.verbose:
+    print 'Get Processing Options...'
 (RAPDU, sw1, sw2) = myTransmit(connection, '80A8000003830134', args.debug)
-if args.verbose:
-    print "%02X %02X" % (sw1, sw2)
-    print TLVparser(RAPDU)
+parsedRAPDU = TLVparser(RAPDU)
+if args.debug:
+    print parsedRAPDU
+files=[]
+assert 0x77 in parsedRAPDU
+rsp_msg_template2 = parsedRAPDU[parsedRAPDU.index(0x77)]
+if 0x94 in rsp_msg_template2:
+    application_file_locator = rsp_msg_template2.get(0x94)
+    raw_afl=application_file_locator.V.decode('hex')
+    for i in range(application_file_locator.L/4):
+        files.append([ord(x) for x in raw_afl[i*4:i*4+4]])
 
-# TODO
-# Read 0x010C = ?? & where 0x010C is in previous TLV??
-CAPDU='00B2%04X00' % 0x010C
+# Read files
+for f in files:
+    # TODO: for now, reading only first record of each file, empirical...
+    file_id = (f[1]<<8) + (f[0] & 0xF8) + 0x04
+    if args.verbose:
+        print 'Read record %04X...' % file_id
+    CAPDU='00B2%04X00' % file_id
+    (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+    parsedRAPDU = TLVparser(RAPDU)
+    if args.debug:
+        print parsedRAPDU
+    if 0x70 in parsedRAPDU:
+        aef_data_template = parsedRAPDU[parsedRAPDU.index(0x70)]
+        if 0x9F56 in aef_data_template:
+            hex_ipb = aef_data_template.get(0x9F56).V
+            if args.verbose:
+                print 'Issuer Proprietary Bitmap: ' + hex_ipb
+            raw_ipb = hex_ipb.decode('hex')
+        if 0x8C in aef_data_template:
+            tlv_cdol1 = aef_data_template.get(0x8C)
+        if 0x8D in aef_data_template:
+            tlv_cdol2 = aef_data_template.get(0x8D)
+assert raw_ipb
+assert tlv_cdol1
+assert tlv_cdol2
+
+# Get PIN Try Counter
+CAPDU='80CA9F1700'
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
-if args.verbose:
-    print "%02X %02X" % (sw1, sw2)
-    print RAPDU
-#    print TLVparser(RAPDU)
+parsedRAPDU = TLVparser(RAPDU)
+if args.debug:
+    print parsedRAPDU
+assert 0x9F17 in parsedRAPDU
+ntry = parsedRAPDU[parsedRAPDU.index(0x9F17)].V
+if ntry < 3 or args.verbose:
+    print 'Still %i PIN tries available!' % ntry
 
-sys.exit()
+# Verify PIN
+pin=getpass.getpass('Enter PIN (enter to abort)  :')
+while len(pin)<4 or len(pin)>12 or not pin.isdigit():
+    if len(pin) == 0:
+        sys.exit()
+    pin=getpass.getpass('Error! I expect a proper PIN: ')
+CAPDU='002000800824'+pin+'F'*(14-len(pin))
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+if sw1 != 0x90 or sw2 != 00:
+    print 'Error wrong PIN!!!'
+    sys.exit()
+
+# Generate Application Cryptogram ARQC
+if args.verbose:
+    print 'Generate Application Cryptogram ARQC...'
 
 #args.m2data=[11, 22, 33]
 #args.mode=2
