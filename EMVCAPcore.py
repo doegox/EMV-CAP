@@ -72,18 +72,29 @@ class TLV():
     def __init__(self, T, L, V=None):
         self.T = T
         self.L = L
+        if T > 0x100:
+            T1 = T >> 8
+            self.hex_T = "%04X" % T
+        else:
+            T1 = T
+            self.hex_T = "%02X" % T
+        self.tclass = T1 >> 6
+        self.type = (T1 & 0x20) >> 5
         if T in TLVdict:
             self.name = TLVdict[T]['name']
-            if V is not None:
+        else:
+            self.name = 'Unknown tag %0X' % T
+        if V is None:
+            self.V = None
+        else:
+            if T in TLVdict:
                 self.V = TLVdict[T]['parse'](V)
             else:
-                self.V = None
-        else:
-            if V is not None:
-                self.V = ''.join(["%02X" % i for i in V])
-            else:
-                self.V = None
-            self.name = 'Unknown tag %0X' % T
+                if self.type == 0x01: # constructed
+                    self.V = TLVparser(V)
+                else:
+                    self.V = ''.join(["%02X" % i for i in V])
+
     def __cmp__(self, tlv2):
         if isinstance(tlv2, int):
             return tlv2 == self.T
@@ -103,6 +114,10 @@ class TLV():
     def __repr__(self):
         r = "<TLV\n"
         r += "    Tag:    %02X (%s)\n" % (self.T, self.name)
+        classnames=['universal', 'application', 'context specific', 'private']
+        r += "            %s class\n" % classnames[self.tclass]
+        typenames=['primitive', 'constructed']
+        r += "            %s\n" % typenames[self.type]
         r += "    Length: %i bytes\n" % self.L
         r += "    Value:  "
         if isinstance(self.V, list):
@@ -115,7 +130,8 @@ class TLV():
 def TLVparser(raw, hasdata=True):
     if len(raw) == 0:
         return False
-    #TODO: only supporting tag IDs of length 1 or 2 at the moment
+    # EMV 2000 only supports tagnames of length 1 or 2 (from book, ch4.2)
+    # should we support lengths > 127 (and length coded on more than one byte)?
     if raw[0] & 0x1F == 0x1F:
         T = (raw[0]<<8) + raw[1]
         L = raw[2]
@@ -137,10 +153,12 @@ def TLVparser(raw, hasdata=True):
         resp.extend(TLVparser(raw, hasdata))
     return resp
 
+# TODO get some more TLV from https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
+# and from http://www.emvlab.org/emvtags/all/
 TLVdict = {
     0x42:  {'name':'issuer authority',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
-    0x50:  {'name':'unknown tag 50: App Name??', #TODO
+    0x50:  {'name':'Application Label', #TODO
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x57:  {'name':'track2 equivalent data',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
@@ -168,7 +186,11 @@ TLVdict = {
             'parse':TLVparser},
     0x77:  {'name':'response message template format 2',
             'parse':TLVparser},
+    0x80:  {'name':'Command Template',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x82:  {'name':'application interchange profile (AIP)',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x83:  {'name':'Command Template',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x84:  {'name':'dedicated file (df) name',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, 
@@ -192,16 +214,20 @@ TLVdict = {
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F03:{'name':'Other Amount',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F12:{'name':'Application Preferred Name',
+            'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x9F17:{'name':'PIN Retry Counter',
             'parse':lambda x: x[0]},
     0x9F1A:{'name':'Terminal Country Code',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F34:{'name':'cardholder verification method (cvm) results',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F35:{'name':'terminal type',
+            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F37:{'name':'Unpredictable Number (UN)',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
     0x9F38:{'name':'processing options dol (pdol)',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+            'parse':lambda x: TLVparser(x, False)},
     0x9F42:{'name':'application currency code',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
     0x9F44:{'name':'application currency exponent',

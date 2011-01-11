@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# All refs to "book" are from "Implementing Electronic Card Payment Systems" by Cristian Radu
+
 import sys
 import argparse
 import smartcard
@@ -79,12 +81,6 @@ def MyConnect(reader_match=None, debug=False):
     except smartcard.Exceptions.CardConnectionException:
         print 'No card found!'
         return None
-    return connection
-
-    #if debug:
-    # TODO: how??
-    #    observer=smartcard.CardConnection.Observer()
-    #    connection.addObserver(observer)
     return connection
 
 def myTransmit(connection, CAPDU, debug=False, maskpin=True):
@@ -186,8 +182,13 @@ if current_app is None:
     sys.exit()
 assert 0x6F in parsedRAPDU
 fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
+assert 0x84 in fci_template
+aid = fci_template.get(0x84)
+tlv_pdol=None
 if 0xA5 in fci_template:
     fci_proprietary_template = fci_template.get(0xA5)
+    if 0x9F38 in fci_proprietary_template:
+        tlv_pdol = fci_proprietary_template.get(0x9F38)
     if 0xBF0C in fci_proprietary_template:
         fci_issuer_discretionary_data = fci_proprietary_template.get(0xBF0C)
         if 0x9F55 in fci_issuer_discretionary_data:
@@ -199,7 +200,30 @@ if 0xA5 in fci_template:
 # Initiate transaction / Get Processing Options:
 if args.verbose:
     print 'Get Processing Options...'
-(RAPDU, sw1, sw2) = myTransmit(connection, '80A8000003830134', args.debug)
+# From book, ch 6.2.1
+default_pdol_data={'9F35':'34', # From book, ch 8.6.1.2, Terminal Type = 34 (Annex A1 of Book 4 in the EMV 2000 specifications).
+                  }
+# Some other possible pdol contents:
+# Terminal Type (tag 9F35), Terminal Capabilities (9F33), Terminal Country Code (9F1A), or the Merchant Category Code (9F15)
+# Authorized Amount (tag 81)
+
+pdol_data=''
+if tlv_pdol is not None:
+    for t in tlv_pdol.V:
+        if t.hex_T in default_pdol_data:
+            data = default_pdol_data[t.hex_T]
+            assert len(data)/2 == t.L
+            pdol_data += data
+            if args.debug:
+                print 'Will use %s for %s' % (data, t.hex_T)
+        else:
+            print 'Error I need to provide a value for %s and I dont know what' % t.hex_T
+            sys.exit()
+CAPDU = '80A80000%02X83%02X%s' % ((len(pdol_data)/2)+2, (len(pdol_data)/2), pdol_data)
+if args.debug:
+    print TLVparser([ord(c) for c in CAPDU[5*2:].decode('hex')])
+
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
@@ -214,16 +238,19 @@ if 0x94 in rsp_msg_template2:
 
 # Read files
 for f in files:
-    # TODO: for now, reading only first record of each file, empirical...
-    file_id = (f[1]<<8) + (f[0] & 0xF8) + 0x04
-    if args.verbose:
-        print 'Read record %04X...' % file_id
-    CAPDU='00B2%04X00' % file_id
-    (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
-    parsedRAPDU = TLVparser(RAPDU)
-    if args.debug:
-        print parsedRAPDU
-    if 0x70 in parsedRAPDU:
+    # From book, ch 4.3.2.1
+    sfi = f[0] >> 3
+    p2 = (sfi << 3) + 0b100 # means P1 to be interpreted as a record
+    for record in range(f[1], f[2]+1):
+        p1 = record
+        if args.verbose:
+            print 'Read record %02X of SFI %02X...' % (record, sfi)
+        CAPDU='00B2%02X%02X00' % (p1, p2)
+        (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+        parsedRAPDU = TLVparser(RAPDU)
+        if args.debug:
+            print parsedRAPDU
+        assert 0x70 in parsedRAPDU
         aef_data_template = parsedRAPDU[parsedRAPDU.index(0x70)]
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
@@ -239,6 +266,7 @@ assert tlv_cdol1
 assert tlv_cdol2
 
 # Get PIN Try Counter
+# From book, ch 6.6.4
 CAPDU='80CA9F1700'
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
@@ -255,7 +283,7 @@ while len(pin)<4 or len(pin)>12 or not pin.isdigit():
     if len(pin) == 0:
         sys.exit()
     pin=getpass.getpass('Error! I expect a proper PIN: ')
-CAPDU='002000800824'+pin+'F'*(14-len(pin))
+CAPDU='00200080082%i' % len(pin)+pin+'F'*(14-len(pin))
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 if sw1 != 0x90 or sw2 != 00:
     print 'Error wrong PIN!!!'
@@ -265,6 +293,26 @@ del(pin)
 # Generate Application Cryptogram ARQC
 if args.verbose:
     print 'Generate Application Cryptogram ARQC...'
+
+# From book, ch 8.6.1.2
+#The type of financial transaction performed by the cardholder system with a remote merchant server limits to the purchase of goods and services. This means that the value field of the Transaction Type (tag 9C) data object is always 00.
+#The processing performed by the cardholder system is dynamically reflected in only a few bits of the TVR, the rest being statically set, since the corresponding stages of the EMV transaction are skipped.
+#In the first byte of the TVR: Since the off-line data authentication is not included in the transaction profile, bit 8, "Off-line data authentication was not performed", is set to 1, while all the other bits in byte 1 of the TVR are statically set to 0.
+
+default_cdol_data={
+                  }
+cdol1_data=''
+for t in tlv_cdol1.V:
+    if t.hex_T in default_cdol_data:
+        data = default_cdol_data[t.hex_T]
+        assert len(data)/2 == t.L
+        cdol1_data += data
+        if args.debug:
+            print 'Will use %s for %s' % (data, t.hex_T)
+    else:
+        print 'Error I need to provide a value for %s and I dont know what' % t.hex_T
+        sys.exit()
+
 
 #args.m2data=[11, 22, 33]
 #args.mode=2
