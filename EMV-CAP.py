@@ -10,18 +10,18 @@ from EMVCAPcore import *
 from Crypto.Cipher import DES
 
 def MyListReaders():
+    print 'Available readers:'
     try:
         readers=smartcard.System.readers()
         if len(readers) == 0:
-            print 'error: no reader found!'
-            return
-        print 'Available readers:'
-        for i in range(len(readers)):
-            print i, ':', readers[i]
-        return
+            print 'Warning: no reader found!'
+        else:
+            for i in range(len(readers)):
+                print i, ' :', readers[i]
     except smartcard.pcsc.PCSCExceptions.EstablishContextException:
-        print 'Cannot connect to PC/SC daemon!'
-        return
+        print 'Warning: cannot connect to PC/SC daemon!'
+    print 'foo: provides fake reader and card for demo/debug purposes (PIN=1234)'
+    return
 
 def MyConnectFoo(debug=False):
     class ConnectFooClass():
@@ -46,6 +46,8 @@ def MyConnectFoo(debug=False):
     return ConnectFooClass()
 
 def MyConnect(reader_match=None, debug=False):
+    if reader_match == "foo":
+        return MyConnectFoo(debug)
     reader=None
     try:
         readers=smartcard.System.readers()
@@ -77,9 +79,9 @@ def MyConnect(reader_match=None, debug=False):
         return None
     try:
         connection.connect()
-        del(connection)
     except smartcard.Exceptions.CardConnectionException:
         print 'No card found!'
+        del(connection)
         return None
     return connection
 
@@ -111,6 +113,9 @@ parser = argparse.ArgumentParser(description='EMV-CAP calculator',
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog='''\
 Examples:
+    %(prog)s --listreaders
+    %(prog)s --listapps
+    %(prog)s --listapps --debug --reader foo
     %(prog)s -m1 123456
     %(prog)s -m2
     %(prog)s -m2 1000 3101234567
@@ -119,19 +124,19 @@ group1 = parser.add_argument_group('Standalone options')
 group1.add_argument('-l', '--listreaders', dest='listreaders',
                    action='store_true', default=False,
                    help='print list of available readers and exit')
+group1.add_argument('-L', '--listapps', dest='listapps',
+                   action='store_true', default=False,
+                   help='print list of available applications on the card and exit')
 group2 = parser.add_argument_group('Global options')
 group2.add_argument('-r', '--reader', dest='reader_match',
                    metavar='{<index>, <reader_substring>}',
-                   help='select one specific reader with reader index, name string or sub-string otherwise first reader found will be used')
+                   help='select one specific reader with reader index, name string or sub-string otherwise first reader found will be used. ')
 group2.add_argument('-d', '--debug', dest='debug',
                    action='store_true', default=False,
                    help='print exchanged APDU for debugging')
 group2.add_argument('-v', '--verbose', dest='verbose',
                    action='store_true', default=False,
                    help='print APDU parsing')
-group2.add_argument('-f', '--foo', dest='foo',
-                   action='store_true', default=False,
-                   help='fake reader, just for debugging')
 group3 = parser.add_argument_group('Modes and data')
 group3.add_argument('-m', '--mode', dest='mode',
                    action='store',
@@ -142,7 +147,9 @@ group3.add_argument('m2data', metavar='N', type=int, nargs='*', \
                    help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
 
 args = parser.parse_args()
-if args.mode is None and args.listreaders is False and args.foo is False:
+if args.listapps:
+    args.verbose = True
+if args.mode is None and args.listreaders is False and args.listapps is False:
     print 'error: argument -m/--mode is required'
     parser.print_usage()
     sys.exit()
@@ -151,11 +158,7 @@ if args.listreaders:
     MyListReaders()
     sys.exit()
 
-if args.foo is False:
-    connection = MyConnect(args.reader_match, args.debug)
-else:
-    connection = MyConnectFoo(args.debug)
-
+connection = MyConnect(args.reader_match, args.debug)
 if connection is None:
     sys.exit()
 
@@ -171,15 +174,23 @@ for app in ApplicationsList:
     if len(RAPDU) != 0:
         if current_app is None:
             current_app=app
-            parsedRAPDU = TLVparser(RAPDU)
         if args.verbose:
             print "Application detected: " + app['description']
-            if args.debug:
-                print ''.join(["%02X" % i for i in RAPDU])
-                print TLVparser(RAPDU)
+        if args.debug:
+            print ''.join(["%02X" % i for i in RAPDU])
+            print TLVparser(RAPDU)
+if args.listapps:
+    # We're done
+    sys.exit()
 if current_app is None:
     print 'No suitable app found, exiting'
     sys.exit()
+if args.verbose:
+    print 'Will use the following application: ' + current_app['name']
+# Do a select again as we might have selected also other apps while scanning:
+CAPDU='00A40400'+("%02X" % (len(current_app['AID'])/2))+current_app['AID']
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+parsedRAPDU = TLVparser(RAPDU)
 assert 0x6F in parsedRAPDU
 fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
 assert 0x84 in fci_template
@@ -196,6 +207,7 @@ if 0xA5 in fci_template:
             psn_to_be_used = (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
             if psn_to_be_used:
                 print 'Warning card tells to use PSN but I dont know how'
+
 
 # Initiate transaction / Get Processing Options:
 if args.verbose:

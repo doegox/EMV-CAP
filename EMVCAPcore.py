@@ -5,7 +5,7 @@ ApplicationsList = [
       'AID':'A0000000038002',        'onVasco810?':True },
     { 'name':'SecureCode Aut',       'description':'SecureCode Aut = MasterCard CAP',
       'AID':'A0000000048002',        'onVasco810?':True },
-    { 'name':'Unknown(1)',           'description':'Unknown app, BANCONTACT??',
+    { 'name':'BANCONTACT',           'description':'BANCONTACT',
       'AID':'D056000666111010',      'onVasco810?':True },
     { 'name':'VISA electron',        'description':'VISA Electron (Debit)',
       'AID':'A0000000032010',        'onVasco810?':True },
@@ -87,7 +87,7 @@ class TLV():
         if V is None:
             self.V = None
         else:
-            if T in TLVdict:
+            if T in TLVdict and 'parse' in TLVdict[T]:
                 self.V = TLVdict[T]['parse'](V)
             else:
                 if self.type == 0x01: # constructed
@@ -155,94 +155,64 @@ def TLVparser(raw, hasdata=True):
 
 # TODO get some more TLV from https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
 # and from http://www.emvlab.org/emvtags/all/
+# and from http://cheef.ru/docs/HowTo/TAG.info
 TLVdict = {
     0x42:  {'name':'issuer authority',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x50:  {'name':'Application Label', #TODO
             'parse':lambda x:''.join([chr(i) for i in x])}, 
-    0x57:  {'name':'track2 equivalent data',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x5A:  {'name':'application Primary Account Number (PAN)',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])},
+    0x57:  {'name':'track2 equivalent data',},
+    0x5A:  {'name':'application Primary Account Number (PAN)',},
     0x5F24:{'name':'application expiration date',
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F25:{'name':'application effective date',
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
-    0x5F28:{'name':'issuer country code',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
-    0x5F2A:{'name':'Transaction Currency Code',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
-    0x5F2C:{'name':'Cardholder nationality',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
+    0x5F28:{'name':'issuer country code',},
+    0x5F2A:{'name':'Transaction Currency Code',},
+    0x5F2C:{'name':'Cardholder nationality',},
     0x5F2D:{'name':'language preference',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
-    0x5F34:{'name':'application PAN sequence number',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
-    0x5F55:{'name':'unknown 5F55: country sth?',
+    0x5F34:{'name':'application PAN sequence number',},
+    0x5F55:{'name':'Issuer Country Code (alpha2 format)',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
-    0x6F:  {'name':'fci template',
-            'parse':TLVparser},
-    0x70:  {'name':'aef data template',
-            'parse':TLVparser},
-    0x77:  {'name':'response message template format 2',
-            'parse':TLVparser},
-    0x80:  {'name':'Command Template',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x82:  {'name':'application interchange profile (AIP)',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x83:  {'name':'Command Template',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x6F:  {'name':'fci template',},
+    0x70:  {'name':'aef data template',},
+    0x77:  {'name':'response message template format 2',},
+    0x80:  {'name':'Command Template',},
+    0x82:  {'name':'application interchange profile (AIP)',},
+    0x83:  {'name':'Command Template',},
     0x84:  {'name':'dedicated file (df) name',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, 
     0x8C:  {'name':'card risk management dol 1 (cdol1)',
             'parse':lambda x: TLVparser(x, False)},
     0x8D:  {'name':'card risk management dol 2 (cdol2)',
             'parse':lambda x: TLVparser(x, False)},
-    0x8E:  {'name':'cardholder verification method (CMV) list',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x91:  {'name':'issuer authentication data',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x94:  {'name':'application file locator',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x95:  {'name':'Terminal Verification Results',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9A:  {'name':'Transaction Date',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9C:  {'name':'Transaction Type',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F02:{'name':'Authorized Amount (AA)',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F03:{'name':'Other Amount',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x8E:  {'name':'cardholder verification method (CMV) list',},
+    0x91:  {'name':'issuer authentication data',},
+    0x94:  {'name':'application file locator',},
+    0x95:  {'name':'Terminal Verification Results',},
+    0x9A:  {'name':'Transaction Date',},
+    0x9C:  {'name':'Transaction Type',},
+    0x9F02:{'name':'Authorized Amount (AA)',},
+    0x9F03:{'name':'Other Amount',},
     0x9F12:{'name':'Application Preferred Name',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x9F17:{'name':'PIN Retry Counter',
             'parse':lambda x: x[0]},
-    0x9F1A:{'name':'Terminal Country Code',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F34:{'name':'cardholder verification method (cvm) results',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F35:{'name':'terminal type',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F37:{'name':'Unpredictable Number (UN)',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
+    0x9F1A:{'name':'Terminal Country Code',},
+    0x9F34:{'name':'cardholder verification method (cvm) results',},
+    0x9F35:{'name':'terminal type',},
+    0x9F37:{'name':'Unpredictable Number (UN)',},
     0x9F38:{'name':'processing options dol (pdol)',
             'parse':lambda x: TLVparser(x, False)},
-    0x9F42:{'name':'application currency code',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO 
+    0x9F42:{'name':'application currency code',},
     0x9F44:{'name':'application currency exponent',
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
-    0x9F4C:{'name':'ICC dynamic number',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F55:{'name':'Issuer Authentication Flag',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, #TODO
-    0x9F56:{'name':'Issuer Authentication Indicator / IPB',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])},
-    0xA5:  {'name':'fci proprietary template',
-            'parse':TLVparser}, 
-    0xBF0C:{'name':'fci issuer discretionary data',
-            'parse':TLVparser}, 
+    0x9F4C:{'name':'ICC dynamic number',},
+    0x9F55:{'name':'Issuer Authentication Flag',},
+    0x9F56:{'name':'Issuer Authentication Indicator / IPB',},
+    0xA5:  {'name':'fci proprietary template',},
+    0xBF0C:{'name':'fci issuer discretionary data',},
     0xDF07:{'name':'unknown tag DF07 (Banksys ID??)',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
 }
-
