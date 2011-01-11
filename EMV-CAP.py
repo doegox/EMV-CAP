@@ -31,8 +31,10 @@ def MyConnectFoo(debug=False):
                '00B2040C00':'70589F560B0000FF000000000003FFFF8E0A000000000000000001008C1B9F02069F03069F1A0295055F2A029A039C019F37049F4C029F34038D1F8A029F02069F03069F1A0295055F2A029A039C019F37049F4C029F3403910A9000',
                '80CA9F1700':'9F1701039000',
                '0020008008241234FFFFFFFFFF':'9000',
-               '80AE80002200000000000000000000000000008000000000000000000000000000000000010002':'77269F2701809F3602005A9F2608513C1201B7DB02A09F100F06015603A4000007000300000100029000',
-               '80AE00002E5A330000000000000000000000000000800000000000000000000000000000000001000200000000000000000000':'77269F2701009F3602005A9F2608AB0862BD0B5A7B8C9F100F0601560325A00007010300000100029000',
+               '80AE80002200000000000000000000000000008000000000000000000000000012340000010002':'77269F2701809F360200599F2608AAAAAAAAAAAA12349F100F06015603A4000007000300000100029000',
+               '80AE80002200000000000000000000000000008000000000000000000000000000000000010002':'77269F2701809F3602005A9F2608BBBBBBBBBBBBBBBB9F100F06015603A4000007000300000100029000',
+               '80AE00002E5A330000000000000000000000000000800000000000000000000000001234000001000200000000000000000000':'77269F2701009F360200599F2608CCCCCCCCCCCC12349F100F0601560325A00007010300000100029000',
+               '80AE00002E5A330000000000000000000000000000800000000000000000000000000000000001000200000000000000000000':'77269F2701009F3602005A9F2608DDDDDDDDDDDDDDDD9F100F0601560325A00007010300000100029000',
         }
         def transmit(self, CAPDU):
             hexCAPDU=''.join(["%02X" % i for i in CAPDU])
@@ -143,7 +145,7 @@ group3.add_argument('-m', '--mode', dest='mode',
                    type=int,
                    choices=[1, 2],
                    help='M1/M2 mode selection (mandatory, unless -l is used)')
-group3.add_argument('m2data', metavar='N', type=int, nargs='*', \
+group3.add_argument('mdata', metavar='N', type=int, nargs='*', \
                    help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
 
 args = parser.parse_args()
@@ -151,6 +153,10 @@ if args.listapps:
     args.verbose = True
 if args.mode is None and args.listreaders is False and args.listapps is False:
     print 'error: argument -m/--mode is required'
+    parser.print_usage()
+    sys.exit()
+if args.mode == 1 and len(args.mdata) > 1:
+    print 'error: max one number in mode1 please'
     parser.print_usage()
     sys.exit()
 
@@ -162,10 +168,12 @@ connection = MyConnect(args.reader_match, args.debug)
 if connection is None:
     sys.exit()
 
+# ---------------------------------------------------------------------------------------------------
 # ATR
 if args.debug:
     print "ATR:          " + ''.join(["%02X" % i for i in connection.getATR()])
 
+# ---------------------------------------------------------------------------------------------------
 # Select Application:
 current_app=None
 for app in ApplicationsList:
@@ -194,7 +202,7 @@ parsedRAPDU = TLVparser(RAPDU)
 assert 0x6F in parsedRAPDU
 fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
 assert 0x84 in fci_template
-aid = fci_template.get(0x84)
+tlv_aid = fci_template.get(0x84)
 tlv_pdol=None
 if 0xA5 in fci_template:
     fci_proprietary_template = fci_template.get(0xA5)
@@ -209,6 +217,7 @@ if 0xA5 in fci_template:
                 print 'Warning card tells to use PSN but I dont know how'
 
 
+# ---------------------------------------------------------------------------------------------------
 # Initiate transaction / Get Processing Options:
 if args.verbose:
     print 'Get Processing Options...'
@@ -248,6 +257,7 @@ if 0x94 in rsp_msg_template2:
     for i in range(application_file_locator.L/4):
         files.append([ord(x) for x in raw_afl[i*4:i*4+4]])
 
+# ---------------------------------------------------------------------------------------------------
 # Read files
 for f in files:
     # From book, ch 4.3.2.1
@@ -277,6 +287,7 @@ assert raw_ipb
 assert tlv_cdol1
 assert tlv_cdol2
 
+# ---------------------------------------------------------------------------------------------------
 # Get PIN Try Counter
 # From book, ch 6.6.4
 CAPDU='80CA9F1700'
@@ -289,7 +300,9 @@ ntry = parsedRAPDU[parsedRAPDU.index(0x9F17)].V
 if ntry < 3 or args.verbose:
     print 'Still %i PIN tries available!' % ntry
 
+# ---------------------------------------------------------------------------------------------------
 # Verify PIN
+# From book, ch 6.6.4
 pin=getpass.getpass('Enter PIN (enter to abort)  :')
 while len(pin)<4 or len(pin)>12 or not pin.isdigit():
     if len(pin) == 0:
@@ -302,30 +315,51 @@ if sw1 != 0x90 or sw2 != 00:
     sys.exit()
 del(pin)
 
+# ---------------------------------------------------------------------------------------------------
 # Generate Application Cryptogram ARQC
 if args.verbose:
     print 'Generate Application Cryptogram ARQC...'
 
-# From book, ch 8.6.1.2
-#The type of financial transaction performed by the cardholder system with a remote merchant server limits to the purchase of goods and services. This means that the value field of the Transaction Type (tag 9C) data object is always 00.
-#The processing performed by the cardholder system is dynamically reflected in only a few bits of the TVR, the rest being statically set, since the corresponding stages of the EMV transaction are skipped.
-#In the first byte of the TVR: Since the off-line data authentication is not included in the transaction profile, bit 8, "Off-line data authentication was not performed", is set to 1, while all the other bits in byte 1 of the TVR are statically set to 0.
+# TODO handle CAP Sign, with amount into transaction_value and account into unpredictable_number
+transaction_value = 0
+unpredictable_number = 0
+if args.mode == 1 and len(args.mdata) == 1:
+    unpredictable_number = args.mdata[0]
 
-default_cdol_data={
-                  }
-cdol1_data=''
-for t in tlv_cdol1.V:
-    if t.hex_T in default_cdol_data:
-        data = default_cdol_data[t.hex_T]
-        assert len(data)/2 == t.L
-        cdol1_data += data
-        if args.debug:
-            print 'Will use %s for %s' % (data, t.hex_T)
-    else:
-        print 'Error I need to provide a value for %s and I dont know what' % t.hex_T
-        sys.exit()
+cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, unpredictable_number, args.debug)
+if cdol1_data is None:
+    sys.exit()
+CAPDU='80AE8000%02X%s' % (len(cdol1_data)/2, cdol1_data)
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+parsedRAPDU = TLVparser(RAPDU)
+if args.debug:
+    print parsedRAPDU
+assert 0x77 in parsedRAPDU
+resp = parsedRAPDU[parsedRAPDU.index(0x77)]
+assert 0x9F26 in resp
+hex_ac = resp.get(0x9F26).V
+if args.verbose:
+    print 'Got cryptogram = ' + hex_ac
+
+# ---------------------------------------------------------------------------------------------------
+# Generate Application Cryptogram AAC
+if args.verbose:
+    print 'Generate Application Cryptogram AAC...'
+cdol2_data = cdol_filling(tlv_cdol2, tlv_aid, transaction_value, unpredictable_number, args.debug)
+if cdol2_data is None:
+    sys.exit()
+CAPDU='80AE0000%02X%s' % (len(cdol2_data)/2, cdol2_data)
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+parsedRAPDU = TLVparser(RAPDU)
+if args.debug:
+    print parsedRAPDU
+
+# ---------------------------------------------------------------------------------------------------
+# From here no more interaction with the card needed
+
+# ---------------------------------------------------------------------------------------------------
+# Display digits
 
 
-#args.m2data=[11, 22, 33]
+#args.mdata=[11, 22, 33]
 #args.mode=2
-#verbose=False

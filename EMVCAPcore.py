@@ -80,8 +80,11 @@ class TLV():
             self.hex_T = "%02X" % T
         self.tclass = T1 >> 6
         self.type = (T1 & 0x20) >> 5
+        self.known_in_cdol = False
         if T in TLVdict:
             self.name = TLVdict[T]['name']
+            if 'known_in_cdol' in TLVdict[T]:
+                self.known_in_cdol = TLVdict[T]['known_in_cdol']
         else:
             self.name = 'Unknown tag %0X' % T
         if V is None:
@@ -168,7 +171,8 @@ TLVdict = {
     0x5F25:{'name':'application effective date',
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F28:{'name':'issuer country code',},
-    0x5F2A:{'name':'Transaction Currency Code',},
+    0x5F2A:{'name':'Transaction Currency Code',
+            'known_in_cdol':True},
     0x5F2C:{'name':'Cardholder nationality',},
     0x5F2D:{'name':'language preference',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
@@ -183,32 +187,48 @@ TLVdict = {
     0x83:  {'name':'Command Template',},
     0x84:  {'name':'dedicated file (df) name',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, 
+    0x8A:  {'name':'Authorization Response Code',
+            'known_in_cdol':True},
     0x8C:  {'name':'card risk management dol 1 (cdol1)',
             'parse':lambda x: TLVparser(x, False)},
     0x8D:  {'name':'card risk management dol 2 (cdol2)',
             'parse':lambda x: TLVparser(x, False)},
     0x8E:  {'name':'cardholder verification method (CMV) list',},
-    0x91:  {'name':'issuer authentication data',},
+    0x91:  {'name':'issuer authentication data',
+            'known_in_cdol':True},
     0x94:  {'name':'application file locator',},
-    0x95:  {'name':'Terminal Verification Results',},
-    0x9A:  {'name':'Transaction Date',},
-    0x9C:  {'name':'Transaction Type',},
-    0x9F02:{'name':'Authorized Amount (AA)',},
-    0x9F03:{'name':'Other Amount',},
+    0x95:  {'name':'Terminal Verification Results',
+            'known_in_cdol':True},
+    0x9A:  {'name':'Transaction Date',
+            'known_in_cdol':True},
+    0x9C:  {'name':'Transaction Type',
+            'known_in_cdol':True},
+    0x9F02:{'name':'Authorized Amount (AA)',
+            'known_in_cdol':True},
+    0x9F03:{'name':'Other Amount',
+            'known_in_cdol':True},
+    0x9F10:{'name':'Issuer Application Data',},
     0x9F12:{'name':'Application Preferred Name',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x9F17:{'name':'PIN Retry Counter',
             'parse':lambda x: x[0]},
-    0x9F1A:{'name':'Terminal Country Code',},
-    0x9F34:{'name':'cardholder verification method (cvm) results',},
+    0x9F1A:{'name':'Terminal Country Code',
+            'known_in_cdol':True},
+    0x9F26:{'name':'Application Cryptogram (AC)',},
+    0x9F27:{'name':'cryptogram information data',},
+    0x9F36:{'name':'Application Transaction counter (ATC)',},
+    0x9F34:{'name':'cardholder verification method (cvm) results',
+            'known_in_cdol':True},
     0x9F35:{'name':'terminal type',},
-    0x9F37:{'name':'Unpredictable Number (UN)',},
+    0x9F37:{'name':'Unpredictable Number (UN)',
+            'known_in_cdol':True},
     0x9F38:{'name':'processing options dol (pdol)',
             'parse':lambda x: TLVparser(x, False)},
     0x9F42:{'name':'application currency code',},
     0x9F44:{'name':'application currency exponent',
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
-    0x9F4C:{'name':'ICC dynamic number',},
+    0x9F4C:{'name':'ICC dynamic number',
+            'known_in_cdol':True},
     0x9F55:{'name':'Issuer Authentication Flag',},
     0x9F56:{'name':'Issuer Authentication Indicator / IPB',},
     0xA5:  {'name':'fci proprietary template',},
@@ -216,3 +236,38 @@ TLVdict = {
     0xDF07:{'name':'unknown tag DF07 (Banksys ID??)',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
 }
+
+def cdol_filling(tlv_cdol, tlv_aid, transaction_value = 0, unpredictable_number = 0, debug = False):
+    # From book, ch 8.6.1.2
+    # Most of them are null for EMV-CAP so we only check if there are not some unknown stuff in the template
+    cdol_data=''
+    for t in tlv_cdol.V:
+        if t.known_in_cdol:
+            data = '00' * t.L
+            if t == 0x8A:
+                # Authorization Response Code: Z3: Unable to go online (offline declined)
+                data = '5A33'
+            if t == 0x95:
+                # Terminal verification results: offline data authentication was not performed
+                data = '80' + '00' * (t.L -1)
+            elif t == 0x9A and tlv_aid.V == 'A0000000038002': # VisaRemAuthen
+                data = '010101'
+            elif t == 0x9F02 and transaction_value != 0: # TODO
+                print 'Error CAP Sign not yet implemented'
+                return None
+            elif t == 0x9F37 and unpredictable_number != 0:
+                data = '%08i' % unpredictable_number
+            elif t == 0x9F34:
+                # cardholder verification method (cvm) results
+                  # 01 = ICC Plain PIN verification - Fail cardholder verification if...
+                  # 00 = Always
+                  # 02 = Successful (e.g. for offline PIN)
+                assert t.L == 3
+                data = '010002'
+            cdol_data += data
+            if debug:
+                print 'Will use %s for tag %s' % (data, t.hex_T)
+        else:
+            print 'Error I dont know how to handle %s in cdol' % t.hex_T
+            return None
+    return cdol_data
