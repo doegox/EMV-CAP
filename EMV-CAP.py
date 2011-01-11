@@ -204,6 +204,7 @@ fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
 assert 0x84 in fci_template
 tlv_aid = fci_template.get(0x84)
 tlv_pdol=None
+psn_to_be_used=False
 if 0xA5 in fci_template:
     fci_proprietary_template = fci_template.get(0xA5)
     if 0x9F38 in fci_proprietary_template:
@@ -214,8 +215,7 @@ if 0xA5 in fci_template:
             issuer_authentication_flag = fci_issuer_discretionary_data.get(0x9F55)
             psn_to_be_used = (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
             if psn_to_be_used:
-                print 'Warning card tells to use PSN but I dont know how'
-
+                print 'Warning: card tells to use PSN but this was never tested, please report success/failure to developers, thanks!'
 
 # ---------------------------------------------------------------------------------------------------
 # Initiate transaction / Get Processing Options:
@@ -274,16 +274,19 @@ for f in files:
             print parsedRAPDU
         assert 0x70 in parsedRAPDU
         aef_data_template = parsedRAPDU[parsedRAPDU.index(0x70)]
+        if 0x5F34 in aef_data_template:
+            hex_psn = aef_data_template.get(0x5F34).V
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
             if args.verbose:
                 print 'Issuer Proprietary Bitmap: ' + hex_ipb
-            raw_ipb = hex_ipb.decode('hex')
         if 0x8C in aef_data_template:
             tlv_cdol1 = aef_data_template.get(0x8C)
         if 0x8D in aef_data_template:
             tlv_cdol2 = aef_data_template.get(0x8D)
-assert raw_ipb
+if psn_to_be_used:
+    assert hex_psn
+assert hex_ipb
 assert tlv_cdol1
 assert tlv_cdol2
 
@@ -336,10 +339,16 @@ if args.debug:
     print parsedRAPDU
 assert 0x77 in parsedRAPDU
 resp = parsedRAPDU[parsedRAPDU.index(0x77)]
+assert 0x9F10 in resp
+hex_iad = resp.get(0x9F10).V
 assert 0x9F26 in resp
 hex_ac = resp.get(0x9F26).V
+assert 0x9F27 in resp
+hex_cid = resp.get(0x9F27).V
+assert 0x9F36 in resp
+hex_atc = resp.get(0x9F36).V
 if args.verbose:
-    print 'Got cryptogram = ' + hex_ac
+    print 'Got CID=%s ATC=%s AC=%s IAD=%s' % (hex_cid, hex_atc, hex_ac, hex_iad)
 
 # ---------------------------------------------------------------------------------------------------
 # Generate Application Cryptogram AAC
@@ -358,8 +367,18 @@ if args.debug:
 # From here no more interaction with the card needed
 
 # ---------------------------------------------------------------------------------------------------
-# Display digits
+# Mixing TDS with cryptogram if Mode2 with TDS
+if args.mode == 2 and len(args.mdata) > 0:
+    if args.verbose:
+        print 'Mixing TDS with cryptogram...'
+# TODO
 
-
-#args.mdata=[11, 22, 33]
-#args.mode=2
+# ---------------------------------------------------------------------------------------------------
+# Display OTP
+if args.verbose:
+    print 'Computing OTP...'
+if psn_to_be_used:
+    otp=generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, hex_psn, debug=args.debug)
+else:
+    otp=generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, debug=args.debug)
+print 'Response: %i' % otp

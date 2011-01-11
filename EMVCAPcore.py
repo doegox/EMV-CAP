@@ -252,22 +252,56 @@ def cdol_filling(tlv_cdol, tlv_aid, transaction_value = 0, unpredictable_number 
                 data = '80' + '00' * (t.L -1)
             elif t == 0x9A and tlv_aid.V == 'A0000000038002': # VisaRemAuthen
                 data = '010101'
-            elif t == 0x9F02 and transaction_value != 0: # TODO
-                print 'Error CAP Sign not yet implemented'
-                return None
+            elif t == 0x9F02 and transaction_value != 0:
+                data = '%%0%ii' % (t.L*2) % transaction_value
             elif t == 0x9F37 and unpredictable_number != 0:
-                data = '%08i' % unpredictable_number
+                data = '%%0%ii' % (t.L*2) % unpredictable_number
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
                   # 01 = ICC Plain PIN verification - Fail cardholder verification if...
                   # 00 = Always
                   # 02 = Successful (e.g. for offline PIN)
-                assert t.L == 3
                 data = '010002'
+            assert len(data)/2 == t.L
             cdol_data += data
             if debug:
                 print 'Will use %s for tag %s' % (data, t.hex_T)
         else:
-            print 'Error I dont know how to handle %s in cdol' % t.hex_T
+            print 'Error I dont know how to handle tag %s in cdol' % t.hex_T
+            print 'If you want to fill it with null value, add a known_in_cdol flag in TLVdict for that tag'
             return None
     return cdol_data
+
+def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
+    # Expecting arguments as hex strings
+    if psn is not None:
+        hex_data=psn
+    else:
+        hex_data=''
+    hex_data += cid + atc + ac + iad
+    if debug:
+        print 'Data:  ' + hex_data
+        print 'Filter:' + ipb
+    # Right trim hex_data to same length as ipb:
+    hex_data = hex_data[:len(ipb)]
+    # From http://stackoverflow.com/questions/1054116/printing-bit-representation-of-numbers-in-python
+    binary = lambda n: n>0 and binary(n>>1)+[int(n&1)] or []
+    # Note that created binary lists are.
+    bin_data=binary(int(hex_data, 16))
+    bin_ipb=binary(int(ipb, 16))
+    # Left trim bin_data to same length as bin_ipb
+    bin_data = bin_data[len(bin_data)-len(bin_ipb):]
+    if debug:
+        print 'Data:  ' + ''.join([str(b) for b in bin_data])
+        print 'Filter:' + ''.join([str(b) for b in bin_ipb])
+    otp=0
+    debug_otp=''
+    for i in range(len(bin_ipb)):
+        if bin_ipb[i]:
+            otp=(otp<<1)+bin_data[i]
+            debug_otp+=str(bin_data[i])
+        else:
+            debug_otp+=' '
+    if debug:
+        print 'OTP:   ' + debug_otp
+    return otp
