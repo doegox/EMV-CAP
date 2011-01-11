@@ -87,10 +87,13 @@ def MyConnect(reader_match=None, debug=False):
     #    connection.addObserver(observer)
     return connection
 
-def myTransmit(connection, CAPDU, debug=False):
+def myTransmit(connection, CAPDU, debug=False, maskpin=True):
     fetch_more=False
     if debug:
-        print "CAPDU:        " + CAPDU
+        if maskpin and CAPDU[:4]=="0020":
+            print "CAPDU:        " + CAPDU[:12] + "*** (masked as it contains PIN info)"
+        else:
+            print "CAPDU:        " + CAPDU
     (RAPDU, sw1, sw2) = connection.transmit([ord(c) for c in CAPDU.decode('hex')])
     if debug:
         print "RAPDU(%02X %02X): " % (sw1, sw2) + ''.join(["%02X" % i for i in RAPDU])
@@ -257,6 +260,7 @@ CAPDU='002000800824'+pin+'F'*(14-len(pin))
 if sw1 != 0x90 or sw2 != 00:
     print 'Error wrong PIN!!!'
     sys.exit()
+del(pin)
 
 # Generate Application Cryptogram ARQC
 if args.verbose:
