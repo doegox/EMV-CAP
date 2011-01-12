@@ -315,7 +315,8 @@ def mix_tds(ac, mdata, debug=False):
         data += 'F'
     # bit padding:
     data += '80'
-    data += '00' * (8- (len(data)/2) % 8)
+    if (len(data)/2) % 8 != 0:
+    	data += '00' * (8- (len(data)/2) % 8)
     if debug:
         print 'TDS:   ' + data
     return des.encrypt(data.decode('hex'))[-8:].encode('hex')
