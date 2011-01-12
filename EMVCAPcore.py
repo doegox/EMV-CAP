@@ -1,3 +1,5 @@
+from Crypto.Cipher import DES
+
 ApplicationsList = [
 
     # From attempts by a Fortis Vasco810 when presenting e.g. an empty JCOP:
@@ -305,3 +307,15 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
     if debug:
         print 'OTP:   ' + debug_otp
     return otp
+
+def mix_tds(ac, mdata, debug=False):
+    des = DES.new(key=ac.decode('hex'), mode=DES.MODE_CBC)
+    data = 'F'.join([str(i) for i in mdata])
+    if len(data)%2:
+        data += 'F'
+    # bit padding:
+    data += '80'
+    data += '00' * (8- (len(data)/2) % 8)
+    if debug:
+        print 'TDS:   ' + data
+    return des.encrypt(data.decode('hex'))[-8:].encode('hex')

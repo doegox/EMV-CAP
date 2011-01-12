@@ -7,7 +7,6 @@ import argparse
 import smartcard
 import getpass
 from EMVCAPcore import *
-from Crypto.Cipher import DES
 
 def MyListReaders():
     print 'Available readers:'
@@ -145,7 +144,8 @@ group3.add_argument('-m', '--mode', dest='mode',
                    type=int,
                    choices=[1, 2],
                    help='M1/M2 mode selection (mandatory, unless -l is used)')
-group3.add_argument('mdata', metavar='N', type=int, nargs='*', \
+# We've to use type str for mdata instead of int to not mangle most left zeroes if any
+group3.add_argument('mdata', metavar='N', type=str, nargs='*', \
                    help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
 
 args = parser.parse_args()
@@ -159,6 +159,9 @@ if args.mode == 1 and len(args.mdata) > 1:
     print 'error: max one number in mode1 please'
     parser.print_usage()
     sys.exit()
+# Check that mdata strings are actual numbers
+for i in args.mdata:
+    assert i.isdigit()
 
 if args.listreaders:
     MyListReaders()
@@ -327,7 +330,7 @@ if args.verbose:
 transaction_value = 0
 unpredictable_number = 0
 if args.mode == 1 and len(args.mdata) == 1:
-    unpredictable_number = args.mdata[0]
+    unpredictable_number = int(args.mdata[0])
 
 cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, unpredictable_number, args.debug)
 if cdol1_data is None:
@@ -371,7 +374,7 @@ if args.debug:
 if args.mode == 2 and len(args.mdata) > 0:
     if args.verbose:
         print 'Mixing TDS with cryptogram...'
-# TODO
+    hex_ac = mix_tds(hex_ac, args.mdata, args.debug)
 
 # ---------------------------------------------------------------------------------------------------
 # Display OTP
