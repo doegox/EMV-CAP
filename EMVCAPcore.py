@@ -53,15 +53,16 @@ ApplicationsList = [
       'AID':'A0000000250000',        'onVasco810?':False },
     { 'name':'American Express 2',   'description':'American Express 2',
       'AID':'A00000002501',          'onVasco810?':False },
-# TODO:
-# A0000000291010		ATM cardLINK (UK) ATM network
-# A0000001410001		Consorzio BANCOMATPagobancomatItalian domestic debit card
-# A0000001510000
-# A0000002040000?
-# A0000002281010		SAMASaudi Arabia domestic credit/debit card (Saudi Arabia Monetary Agency)
-# A0000002771010		INTERACCanadian domestic credit/debit card
-# A000000308000010000100
-# A0000003591010028001	ZKAGirocard
+    { 'name':'ATM cardLINK',         'description':'ATM cardLINK (UK) ATM network',
+      'AID':'A0000000291010',        'onVasco810?':False },
+    { 'name':'Consorzio BANCOMAT',   'description':'Consorzio BANCOMAT Pagobancomat Italian domestic debit card',
+      'AID':'A0000001410001',        'onVasco810?':False },
+    { 'name':'SAMA',                 'description':'SAMA Saudi Arabia domestic credit/debit card (Saudi Arabia Monetary Agency)',
+      'AID':'A0000002281010',        'onVasco810?':False },
+    { 'name':'INTERAC',              'description':'INTERAC Canadian domestic credit/debit card',
+      'AID':'A0000002771010',        'onVasco810?':False },
+    { 'name':'ZKAGirocard',          'description':'ZKAGirocard',
+      'AID':'A0000003591010028001',  'onVasco810?':False },
 
     # From emv-cards_and_internet_banking_-_michael_schouwenaar.pdf
     # special selects on few files?
@@ -158,9 +159,10 @@ def TLVparser(raw, hasdata=True):
         resp.extend(TLVparser(raw, hasdata))
     return resp
 
-# TODO get some more TLV from https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
-# and from http://www.emvlab.org/emvtags/all/
-# and from http://cheef.ru/docs/HowTo/TAG.info
+# If more EMV tags are needed, some sources are:
+# * http://cheef.ru/docs/HowTo/TAG.info
+# * http://www.emvlab.org/emvtags/all/
+# * https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
 TLVdict = {
     0x42:  {'name':'issuer authority',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
