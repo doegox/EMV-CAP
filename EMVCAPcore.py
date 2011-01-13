@@ -97,13 +97,16 @@ class TLV():
         else:
             if V == [] or isinstance(V[0], TLV): # already parsed
                 self.V = V
-            elif T in TLVdict and 'parse' in TLVdict[T]:
-                self.V = TLVdict[T]['parse'](V)
             else:
-                if self.type == 0x01: # constructed
-                    self.V = TLVparser(V)
+                if T in TLVdict and 'onlyTL' in TLVdict[T]:
+                    self.V = TLVparser(V, False)
                 else:
-                    self.V = ''.join(["%02X" % i for i in V])
+                    if self.type == 0x01: # constructed
+                        self.V = TLVparser(V)
+                    else:
+                        self.V = ''.join(["%02X" % i for i in V])
+                if T in TLVdict and 'parse' in TLVdict[T]:
+                    self.prettyV = TLVdict[T]['parse'](V)
     def __len__(self):
         return self.L
     def __cmp__(self, tlv2):
@@ -135,6 +138,8 @@ class TLV():
             r += '\n    %s\n' % repr(self.V).replace('\n','\n    ')
         else: 
             r += "%s\n" % self.V
+            if hasattr(self, 'prettyV'):
+                r += "    ==      %s\n" % self.prettyV
         r += ">"
         return r
 
@@ -197,6 +202,7 @@ def reconstruct_generatearqc(ct):
 TLVdict = {
     0x42:  {'name':'issuer authority',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
+    0x4F:  {'name':'AID',},
     0x50:  {'name':'Application Label',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x57:  {'name':'track2 equivalent data',},
@@ -214,21 +220,24 @@ TLVdict = {
     0x5F34:{'name':'application PAN sequence number',},
     0x5F55:{'name':'Issuer Country Code (alpha2 format)',
             'parse':lambda x :''.join([chr(i) for i in x])}, 
+    0x61:  {'name':'Application Template'},
     0x6F:  {'name':'fci template',},
     0x70:  {'name':'aef data template',},
     0x77:  {'name':'response message template format 2',},
     0x80:  {'name':'Command Template',},
     0x82:  {'name':'application interchange profile (AIP)',},
     0x83:  {'name':'Command Template',},
-    0x84:  {'name':'dedicated file (df) name',
-            'parse':lambda x: ''.join(["%02X" % i for i in x])}, 
+    0x84:  {'name':'dedicated file (df) name',},
+# can be bin (AID) or ascii...
+#            'parse':lambda x :''.join([chr(i) for i in x])}, 
     0x87:  {'name':'Application Priority Indicator',},
+    0x88:  {'name':'Short File Identifier (SFI)',},
     0x8A:  {'name':'Authorization Response Code',
             'known_in_cdol':True},
     0x8C:  {'name':'card risk management dol 1 (cdol1)',
-            'parse':lambda x: TLVparser(x, False)},
+            'onlyTL':True,},
     0x8D:  {'name':'card risk management dol 2 (cdol2)',
-            'parse':lambda x: TLVparser(x, False)},
+            'onlyTL':True,},
     0x8E:  {'name':'cardholder verification method (CMV) list',},
     0x91:  {'name':'issuer authentication data',
             'known_in_cdol':True},
@@ -261,7 +270,7 @@ TLVdict = {
     0x9F37:{'name':'Unpredictable Number (UN)',
             'known_in_cdol':True},
     0x9F38:{'name':'processing options dol (pdol)',
-            'parse':lambda x: TLVparser(x, False)},
+            'onlyTL':True,},
     0x9F42:{'name':'application currency code',},
     0x9F44:{'name':'application currency exponent',
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 

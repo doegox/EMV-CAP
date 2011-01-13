@@ -1,9 +1,11 @@
-def MyConnectFoo(debug=False):
+def MyConnectFoo(reader_match, debug=False):
     class ConnectFooClass():
         # Example of a debit card
         # using Belgian Vasco810 (pin=1234)
         # M1 challenge=nothing, OTP=23790240
+        # ./EMV-CAP.py -m1 -r foo:debit
         # M1 challenge=1234, OTP=23580039
+        # ./EMV-CAP.py -m1 -r foo:debit 1234
         msgs_debit= {'atr':'3B67000000000000009000',
                 '00A4040007A0000000048002':'6F2E8407A0000000048002A5239F38039F35015F2D026672BF0C159F5501005F2C020056DF0709424B533035363030389000',
                 '80A8000003830134':'770E82021000940808010100080404009000',
@@ -19,6 +21,7 @@ def MyConnectFoo(debug=False):
         # Example of a VISA
         # using Belgian Vasco810 (pin=1234)
         # M1 challenge=nothing, OTP=19814125
+        # ./EMV-CAP.py -m1 -r foo:visa
         msgs_visa= {'atr':'3B67000000000000009000',
                 '00A4040007A0000000038002':'6F388407A0000000038002A52D9F38039F35015F2D026672BF0C1F9F5501005F5502424542034454715F2C020056DF0709424B533035363030389000',
                 '80A8000003830134':'770E82021000940808010100100202009000',
@@ -31,6 +34,7 @@ def MyConnectFoo(debug=False):
         }
         # From http://crypto.hyperlink.cz/files/emv_side_channels_v1.pdf
         # NOT WORKING as we don't know IPB neither obtained OTP
+        # ./EMV-CAP.py -m1 -r foo:rosa -v -d
         msgs_rosa= {'atr':'3BE900008121455649535F494E46200678',
                 '00A4040007A0000000032010':'6F258407A0000000032010A51A500D5649534120456C656374726F6E5F2D08736B6373656E64659000',
                 '80A80000028300':'800A5C0008010500100102019000',
@@ -49,20 +53,24 @@ def MyConnectFoo(debug=False):
         # From http://www.ru.nl/publish/pages/578936/emv-cards_and_internet_banking_-_michael_schouwenaar.pdf
         # using ABN-AMRO e-dentifier2 device (pin=1234)
         # M1 challenge=24661140, OTP=34998891
-        msgs_schouwenaar= {'atr':'00', # unknown
+        # ./EMV-CAP.py -m1 24661140 -r foo:abnamro
+        msgs_abnamro= {'atr':'00', # unknown
                 '00A4040007A0000000048002':'6F258407A0000000048002A51A500E536563757265436F6465204175748701005F2D046E6C656E9000',
                 '80A80000028300':'770A820210009404080101009000',
                 '00B2010C00':'70608C219F02069F03069F1A0295055F2A029A039C019F37049F35019F45029F4C089F34038D0C910A8A0295059F37049F4C085A0A123456789012345678905F3401018E0A000000000000000001009F5501809F560C00007FFFFFE00000000000009000',
                 '80CA9F1700':'9F1701039000',
                 '0020008008241234FFFFFFFFFF':'9000',
                 '80AE80002B00000000000000000000000000008000000000000000000000246611403400000000000000000000010002':'77299F2701809F360200429F2608C14D71DBAFA79FED9F10120012A50003020000000000000000000000FF9000',
-                # TODO Actually input should be scrambled, how???
+                # TODO Actual input should be scrambled, how???
                 '80AE80002B00000000000000000000000000008000000000000000000000661D7D593400000000000000000000010002':'77299F2701809F360200429F2608C14D71DBAFA79FED9F10120012A50003020000000000000000000000FF9000',
-                '80AE0000000000000000000000005A338000000000000000000000000000000000':'77299F2701009F3602004E9F260896F166E11152A46B9F10120012250003420000000000000000000000FF9000',
+                '80AE00001D000000000000000000005A338000000000246611400000000000000000':'77299F2701009F3602004E9F260896F166E11152A46B9F10120012250003420000000000000000000000FF9000',
+                # Actual input for AAC contains empty UN! but it probably doesn't matter...
+                '80AE00001D000000000000000000005A338000000000000000000000000000000000':'77299F2701009F3602004E9F260896F166E11152A46B9F10120012250003420000000000000000000000FF9000',
         }
         # From http://www.cl.cam.ac.uk/~sjm217/papers/fc09optimised.pdf
         # using NatWest card, NatWest reader?
         # M1 challenge=12345678, OTP=4822527
+        # ./EMV-CAP.py -m1 12345678 -r foo:fc09
         msgs_fc09={'atr':'00', #unknown
                 '00A4040007A0000000048002':'6F108407A0000000048002A5055F2D02656E9000',
                 '80A80000028300':'80061000080101009000',
@@ -72,7 +80,9 @@ def MyConnectFoo(debug=False):
                 '80AE80001D0000000000000000000000000000800000000000000000000012345678':'8012800042B7F9A572DA74CAFF06770A03A480009000',
                 '80AE00001F5A330000000000000000000000000000800000000000000000000012345678':'80120000424F1C597723C97D7806770A032580009000',
         }
-        msgs = msgs_schouwenaar
+        def __init__(self, card='debit'):
+            assert hasattr(self, 'msgs_'+card)
+            self.msgs = getattr(self,'msgs_'+card)
         def transmit(self, CAPDU):
             hexCAPDU=''.join(["%02X" % i for i in CAPDU])
             if hexCAPDU in self.msgs:
@@ -82,4 +92,7 @@ def MyConnectFoo(debug=False):
                 return ([], 0x6A, 0x82)
         def getATR(self):
             return [ord(c) for c in self.msgs['atr'].decode('hex')]
-    return ConnectFooClass()
+    if len(reader_match)>4:
+        return ConnectFooClass(reader_match[4:])
+    else:
+        return ConnectFooClass()

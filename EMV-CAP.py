@@ -4,8 +4,6 @@
 
 import sys
 import argparse
-import smartcard
-import getpass
 from EMVCAPfoo  import *
 from EMVCAPcore import *
 
@@ -24,8 +22,8 @@ def MyListReaders():
     return
 
 def MyConnect(reader_match=None, debug=False):
-    if reader_match == "foo":
-        return MyConnectFoo(debug)
+    if len(reader_match) >=3 and reader_match[:3] == "foo":
+        return MyConnectFoo(reader_match, debug)
     reader=None
     try:
         readers=smartcard.System.readers()
@@ -105,6 +103,10 @@ group1.add_argument('-l', '--listreaders', dest='listreaders',
 group1.add_argument('-L', '--listapps', dest='listapps',
                    action='store_true', default=False,
                    help='print list of available applications on the card and exit')
+group1.add_argument('--tlv', dest='parsetlv',
+                   action='store',
+                   type=str,
+                   help='parse a hex string into TLV elements')
 group2 = parser.add_argument_group('Global options')
 group2.add_argument('-r', '--reader', dest='reader_match',
                    metavar='{<index>, <reader_substring>}',
@@ -128,7 +130,7 @@ group3.add_argument('mdata', metavar='N', type=str, nargs='*', \
 args = parser.parse_args()
 if args.listapps:
     args.verbose = True
-if args.mode is None and args.listreaders is False and args.listapps is False:
+if args.mode is None and args.listreaders is False and args.listapps is False and args.parsetlv is None:
     print 'error: argument -m/--mode is required'
     parser.print_usage()
     sys.exit()
@@ -140,6 +142,11 @@ if args.mode == 1 and len(args.mdata) > 1:
 for i in args.mdata:
     assert i.isdigit()
 
+if args.parsetlv:
+    print TLVparser([ord(c) for c in args.parsetlv.decode('hex')])
+    sys.exit()
+
+import smartcard
 if args.listreaders:
     MyListReaders()
     sys.exit()
@@ -170,6 +177,8 @@ for app in ApplicationsList:
 if args.listapps:
     # We're done
     sys.exit()
+
+import getpass
 if current_app is None:
     print 'No suitable app found, exiting'
     sys.exit()
@@ -271,7 +280,7 @@ parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
 assert 0x9F17 in parsedRAPDU
-ntry = parsedRAPDU[parsedRAPDU.index(0x9F17)].V
+ntry = int(parsedRAPDU[parsedRAPDU.index(0x9F17)].V, 16)
 if ntry < 3 or args.verbose:
     print 'Still %i PIN tries available!' % ntry
 
@@ -300,6 +309,7 @@ transaction_value = 0
 unpredictable_number = 0
 if args.mode == 1 and len(args.mdata) == 1:
     unpredictable_number = int(args.mdata[0])
+    # TODO for ABN-AMRO NL there is apparently a scrambling of UN, cf [schouwenaar] annex B
 
 cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, unpredictable_number, args.debug)
 if cdol1_data is None:
