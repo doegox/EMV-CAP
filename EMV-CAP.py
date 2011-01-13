@@ -68,9 +68,9 @@ def myTransmit(connection, CAPDU, debug=False, maskpin=True):
             print "CAPDU:        " + CAPDU[:12] + "*** (masked as it contains PIN info)"
         else:
             print "CAPDU:        " + CAPDU
-    (RAPDU, sw1, sw2) = connection.transmit([ord(c) for c in CAPDU.decode('hex')])
+    (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
     if debug:
-        print "RAPDU(%02X %02X): " % (sw1, sw2) + ''.join(["%02X" % i for i in RAPDU])
+        print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
     if sw1 == 0x61: # More bytes available
         CAPDU='00C00000'+("%02X" % sw2)
         fetch_more=True
@@ -80,9 +80,9 @@ def myTransmit(connection, CAPDU, debug=False, maskpin=True):
     if fetch_more:
         if debug:
             print "CAPDU:        " + CAPDU
-        (RAPDU, sw1, sw2) = connection.transmit([ord(c) for c in CAPDU.decode('hex')])
+        (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
         if debug:
-            print "RAPDU(%02X %02X): " % (sw1, sw2) + ''.join(["%02X" % i for i in RAPDU])
+            print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
     return (RAPDU, sw1, sw2)
 
 parser = argparse.ArgumentParser(description='EMV-CAP calculator',
@@ -218,7 +218,7 @@ for app in ApplicationsList:
         if args.verbose:
             print "Application detected: " + app['description']
         if args.debug:
-            print ''.join(["%02X" % i for i in RAPDU])
+            print lint2hex(RAPDU)
             print TLVparser(RAPDU)
 if args.listapps:
     # We're done
@@ -262,7 +262,7 @@ if pdol_data is None:
     sys.exit()
 CAPDU = '80A80000%02X83%02X%s' % ((len(pdol_data)/2)+2, (len(pdol_data)/2), pdol_data)
 if args.debug:
-    print TLVparser([ord(c) for c in CAPDU[5*2:].decode('hex')])
+    print TLVparser(hex2lint(CAPDU[5*2:]))
 
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)

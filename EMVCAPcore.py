@@ -1,5 +1,14 @@
 from Crypto.Cipher import DES
 
+# Little conversion fcts
+# APDUs will be either hex strings or lists of integers
+def hex2lint(hex):
+    return [ord(c) for c in hex.decode('hex')]
+def lint2hex(lint):
+    return ''.join(["%02X" % i for i in lint])
+def lint2ascii(lint):
+    return ''.join([chr(i) for i in lint])
+
 ApplicationsList = [
 
     # From attempts by a Fortis Vasco810 when presenting e.g. an empty JCOP:
@@ -104,7 +113,7 @@ class TLV():
                     if self.type == 0x01: # constructed
                         self.V = TLVparser(V)
                     else:
-                        self.V = ''.join(["%02X" % i for i in V])
+                        self.V = lint2hex(V)
                 if T in TLVdict and 'parse' in TLVdict[T]:
                     self.prettyV = TLVdict[T]['parse'](V)
     def __len__(self):
@@ -178,9 +187,9 @@ def reconstruct_processingoptions(ct):
     assert 0x80 in ct
     data=ct[ct.index(0x80)].V
     assert len(data)/2 >= 6 and (((len(data)/2)-2) %4) == 0
-    aip_data=[ord(c) for c in data[:4].decode('hex')]
+    aip_data=hex2lint(data[:4])
     tlv_aip=TLV(0x82, len(aip_data), aip_data)
-    afl_data=[ord(c) for c in data[4:].decode('hex')]
+    afl_data=hex2lint(data[4:])
     tlv_afl=TLV(0x94, len(afl_data), afl_data)
     return [TLV(0x77, len(tlv_aip)+len(tlv_afl), [tlv_aip, tlv_afl])]
 
@@ -189,13 +198,13 @@ def reconstruct_generatearqc(ct):
     assert 0x80 in ct
     data=ct[ct.index(0x80)].V
     assert len(data)/2 >= 18
-    cid_data=[ord(c) for c in data[:2].decode('hex')]
+    cid_data=hex2lint(data[:2])
     tlv_cid=TLV(0x9F27, len(cid_data), cid_data)
-    atc_data=[ord(c) for c in data[2:6].decode('hex')]
+    atc_data=hex2lint(data[2:6])
     tlv_atc=TLV(0x9F36, len(atc_data), atc_data)
-    ac_data=[ord(c) for c in data[6:22].decode('hex')]
+    ac_data=hex2lint(data[6:22])
     tlv_ac=TLV(0x9F26, len(ac_data), ac_data)
-    iad_data=[ord(c) for c in data[22:].decode('hex')]
+    iad_data=hex2lint(data[22:])
     tlv_iad=TLV(0x9F10, len(iad_data), iad_data)
     return [TLV(0x77, len(tlv_cid)+len(tlv_atc)+len(tlv_ac)+len(tlv_iad), [tlv_cid, tlv_atc, tlv_ac, tlv_iad])]
 
@@ -205,10 +214,10 @@ def reconstruct_generatearqc(ct):
 # * https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
 TLVdict = {
     0x42:  {'name':'issuer authority',
-            'parse':lambda x:''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
     0x4F:  {'name':'AID',},
     0x50:  {'name':'Application Label',
-            'parse':lambda x:''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
     0x57:  {'name':'track2 equivalent data',},
     0x5A:  {'name':'application Primary Account Number (PAN)',},
     0x5F24:{'name':'application expiration date',
@@ -220,10 +229,10 @@ TLVdict = {
             'known_in_cdol':True},
     0x5F2C:{'name':'Cardholder nationality',},
     0x5F2D:{'name':'language preference',
-            'parse':lambda x :''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
     0x5F34:{'name':'application PAN sequence number',},
     0x5F55:{'name':'Issuer Country Code (alpha2 format)',
-            'parse':lambda x :''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
     0x61:  {'name':'Application Template'},
     0x6F:  {'name':'fci template',},
     0x70:  {'name':'aef data template',},
@@ -233,7 +242,7 @@ TLVdict = {
     0x83:  {'name':'Command Template',},
     0x84:  {'name':'dedicated file (df) name',},
 # can be bin (AID) or ascii...
-#            'parse':lambda x :''.join([chr(i) for i in x])}, 
+#            'parse':lint2ascii}, 
     0x87:  {'name':'Application Priority Indicator',},
     0x88:  {'name':'Short File Identifier (SFI)',},
     0x8A:  {'name':'Authorization Response Code',
@@ -258,7 +267,7 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F10:{'name':'Issuer Application Data',},
     0x9F12:{'name':'Application Preferred Name',
-            'parse':lambda x:''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
     0x9F17:{'name':'PIN Retry Counter',
             'parse':lambda x: x[0]},
     0x9F1A:{'name':'Terminal Country Code',
@@ -287,7 +296,7 @@ TLVdict = {
     0xA5:  {'name':'fci proprietary template',},
     0xBF0C:{'name':'fci issuer discretionary data',},
     0xDF07:{'name':'unknown tag DF07 (Banksys ID??)',
-            'parse':lambda x :''.join([chr(i) for i in x])}, 
+            'parse':lint2ascii}, 
 }
 
 # TODO: should we unify pdol & cdol filling??

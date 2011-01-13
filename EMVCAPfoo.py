@@ -1,3 +1,5 @@
+from EMVCAPcore import hex2lint
+
 def MyConnectFoo(reader_match, debug=False):
     class ConnectFooClass():
         # Example of a debit card
@@ -93,12 +95,12 @@ def MyConnectFoo(reader_match, debug=False):
         def transmit(self, CAPDU):
             hexCAPDU=''.join(["%02X" % i for i in CAPDU])
             if hexCAPDU in self.msgs:
-                rawRAPDU=self.msgs[hexCAPDU].decode('hex')
-                return ([ord(c) for c in rawRAPDU[:-2]], ord(rawRAPDU[-2]), ord(rawRAPDU[-1]))
+                lintRAPDU=hex2lint(self.msgs[hexCAPDU])
+                return (lintRAPDU[:-2], lintRAPDU[-2], lintRAPDU[-1])
             else:
                 return ([], 0x6A, 0x82)
         def getATR(self):
-            return [ord(c) for c in self.msgs['atr'].decode('hex')]
+            return hex2lint(self.msgs['atr'])
     if len(reader_match)>4:
         return ConnectFooClass(reader_match[4:])
     else:
