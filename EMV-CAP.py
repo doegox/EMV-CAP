@@ -6,6 +6,7 @@ import sys
 import argparse
 import smartcard
 import getpass
+from EMVCAPfoo  import *
 from EMVCAPcore import *
 
 def MyListReaders():
@@ -21,47 +22,6 @@ def MyListReaders():
         print 'Warning: cannot connect to PC/SC daemon!'
     print 'foo: provides fake reader and card for demo/debug purposes (PIN=1234)'
     return
-
-def MyConnectFoo(debug=False):
-    class ConnectFooClass():
-        # Example of a debit card: (pin=1234)
-        msgs_debit= {'atr':'3B67000000000000009000',
-                '00A4040007A0000000048002':'6F2E8407A0000000048002A5239F38039F35015F2D026672BF0C159F5501005F2C020056DF0709424B533035363030389000',
-                '80A8000003830134':'770E82021000940808010100080404009000',
-                '00B2010C00':'703E5A0967030405123456789F5F3401025F25030801015F2403121231571367030405123456789D1212221000002200009F5F280200569F420209789F4401029000',
-                '00B2040C00':'70589F560B0000FF000000000003FFFF8E0A000000000000000001008C1B9F02069F03069F1A0295055F2A029A039C019F37049F4C029F34038D1F8A029F02069F03069F1A0295055F2A029A039C019F37049F4C029F3403910A9000',
-                '80CA9F1700':'9F1701039000',
-                '0020008008241234FFFFFFFFFF':'9000',
-                # m1/m2, no data, OTP=23790240
-                '80AE80002200000000000000000000000000008000000000000000000000000000000000010002':'77269F2701809F3602005A9F2608513C1201B7DB02A09F100F06015603A4000007000300000100029000',
-                '80AE00002E5A330000000000000000000000000000800000000000000000000000000000000001000200000000000000000000':'77269F2701009F3602005A9F2608AB0862BD0B5A7B8C9F100F0601560325A00007010300000100029000',
-                # m1, data=1234, OTP=23580039
-                '80AE80002200000000000000000000000000008000000000000000000000000012340000010002':'77269F2701809F360200599F260894AB83B4EA4FCD879F100F06015603A4000007000300000100029000',
-                '80AE00002E5A330000000000000000000000000000800000000000000000000000001234000001000200000000000000000000':'77269F2701009F360200599F26086AC5D81B1BDE0C9A9F100F0601560325A00007010300000100029000',
-        }
-        # Example of a VISA:       (pin=1234)
-        msgs_visa= {'atr':'3B67000000000000009000',
-                '00A4040007A0000000038002':'6F388407A0000000038002A52D9F38039F35015F2D026672BF0C1F9F5501005F5502424542034454715F2C020056DF0709424B533035363030389000',
-                '80A8000003830134':'770E82021000940808010100100202009000',
-                '00B2010C00':'70345A0844541234567890125F34010157131234567890120919D13062010101062800008F5F25030912015F24031306305F280200569000',
-                '00B2021400':'70589F560B0000FF000000000003FFFF8E0A000000000000000001008C1B9F02069F03069F1A0295055F2A029A039C019F37049F4C029F34038D1F8A029F02069F03069F1A0295055F2A029A039C019F37049F4C029F3403910A9000',
-                '80CA9F1700':'9F1701039000',
-                '0020008008241234FFFFFFFFFF':'9000',
-                # m1/m2, no data, OTP=19814125
-                '80AE80002200000000000000000000000000008000000000000001010100000000000000010002':'77269F2701809F3602004B9F2608499FC380743A56ED9F100F06025703A4000007000300000100029000',
-                '80AE00002E5A330000000000000000000000000000800000000000000101010000000000000001000200000000000000000000':'77269F2701009F3602004B9F260806656B99762147A69F100F0602570325200007010300000100029000',
-        }
-        msgs = msgs_debit
-        def transmit(self, CAPDU):
-            hexCAPDU=''.join(["%02X" % i for i in CAPDU])
-            if hexCAPDU in self.msgs:
-                rawRAPDU=self.msgs[hexCAPDU].decode('hex')
-                return ([ord(c) for c in rawRAPDU[:-2]], ord(rawRAPDU[-2]), ord(rawRAPDU[-1]))
-            else:
-                return ([], 0x6A, 0x82)
-        def getATR(self):
-            return [ord(c) for c in self.msgs['atr'].decode('hex')]
-    return ConnectFooClass()
 
 def MyConnect(reader_match=None, debug=False):
     if reader_match == "foo":
@@ -242,24 +202,9 @@ if 0xA5 in fci_template:
 if args.verbose:
     print 'Get Processing Options...'
 # From book, ch 6.2.1
-default_pdol_data={'9F35':'34', # From book, ch 8.6.1.2, Terminal Type = 34 (Annex A1 of Book 4 in the EMV 2000 specifications).
-                  }
-# Some other possible pdol contents:
-# Terminal Type (tag 9F35), Terminal Capabilities (9F33), Terminal Country Code (9F1A), or the Merchant Category Code (9F15)
-# Authorized Amount (tag 81)
-
-pdol_data=''
-if tlv_pdol is not None:
-    for t in tlv_pdol.V:
-        if t.hex_T in default_pdol_data:
-            data = default_pdol_data[t.hex_T]
-            assert len(data)/2 == t.L
-            pdol_data += data
-            if args.debug:
-                print 'Will use %s for %s' % (data, t.hex_T)
-        else:
-            print 'Error I need to provide a value for %s and I dont know what' % t.hex_T
-            sys.exit()
+pdol_data = pdol_filling(tlv_pdol, args.debug)
+if pdol_data is None:
+    sys.exit()
 CAPDU = '80A80000%02X83%02X%s' % ((len(pdol_data)/2)+2, (len(pdol_data)/2), pdol_data)
 if args.debug:
     print TLVparser([ord(c) for c in CAPDU[5*2:].decode('hex')])
@@ -269,6 +214,13 @@ parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
 files=[]
+if 0x80 in parsedRAPDU:
+    # Answer is not TLV encoded, we only get values according to a template
+    if args.verbose:
+        print 'Warning: answer to Get Processing Options is not TLV, attempting to reconstruct it...'
+    parsedRAPDU=reconstruct_processingoptions(parsedRAPDU)
+    if args.debug:
+        print parsedRAPDU
 assert 0x77 in parsedRAPDU
 rsp_msg_template2 = parsedRAPDU[parsedRAPDU.index(0x77)]
 if 0x94 in rsp_msg_template2:
@@ -357,6 +309,13 @@ CAPDU='80AE8000%02X%s' % (len(cdol1_data)/2, cdol1_data)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
+if 0x80 in parsedRAPDU:
+    # Answer is not TLV encoded, we only get values according to a template
+    if args.verbose:
+        print 'Warning: answer to GenerateAC is not TLV, attempting to reconstruct it...'
+    parsedRAPDU=reconstruct_generatearqc(parsedRAPDU)
+    if args.debug:
+        print parsedRAPDU
 assert 0x77 in parsedRAPDU
 resp = parsedRAPDU[parsedRAPDU.index(0x77)]
 assert 0x9F10 in resp
@@ -382,6 +341,13 @@ CAPDU='80AE0000%02X%s' % (len(cdol2_data)/2, cdol2_data)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
+if 0x80 in parsedRAPDU:
+    # Answer is not TLV encoded, we only get values according to a template
+    if args.verbose:
+        print 'Warning: answer to GenerateAC is not TLV, attempting to reconstruct it...'
+    parsedRAPDU=reconstruct_generatearqc(parsedRAPDU)
+    if args.debug:
+        print parsedRAPDU
 
 # ---------------------------------------------------------------------------------------------------
 # From here no more interaction with the card needed

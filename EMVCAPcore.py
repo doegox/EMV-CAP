@@ -86,6 +86,8 @@ class TLV():
         self.known_in_cdol = False
         if T in TLVdict:
             self.name = TLVdict[T]['name']
+            if 'known_in_pdol' in TLVdict[T]:
+                self.known_in_pdol = TLVdict[T]['known_in_pdol']
             if 'known_in_cdol' in TLVdict[T]:
                 self.known_in_cdol = TLVdict[T]['known_in_cdol']
         else:
@@ -93,14 +95,17 @@ class TLV():
         if V is None:
             self.V = None
         else:
-            if T in TLVdict and 'parse' in TLVdict[T]:
+            if V == [] or isinstance(V[0], TLV): # already parsed
+                self.V = V
+            elif T in TLVdict and 'parse' in TLVdict[T]:
                 self.V = TLVdict[T]['parse'](V)
             else:
                 if self.type == 0x01: # constructed
                     self.V = TLVparser(V)
                 else:
                     self.V = ''.join(["%02X" % i for i in V])
-
+    def __len__(self):
+        return self.L
     def __cmp__(self, tlv2):
         if isinstance(tlv2, int):
             return tlv2 == self.T
@@ -159,6 +164,32 @@ def TLVparser(raw, hasdata=True):
         resp.extend(TLVparser(raw, hasdata))
     return resp
 
+def reconstruct_processingoptions(ct):
+    # We assume it's a (77){(82,2)(94,N*4)}
+    assert 0x80 in ct
+    data=ct[ct.index(0x80)].V
+    assert len(data)/2 >= 6 and (((len(data)/2)-2) %4) == 0
+    aip_data=[ord(c) for c in data[:4].decode('hex')]
+    tlv_aip=TLV(0x82, len(aip_data), aip_data)
+    afl_data=[ord(c) for c in data[4:].decode('hex')]
+    tlv_afl=TLV(0x94, len(afl_data), afl_data)
+    return [TLV(0x77, len(tlv_aip)+len(tlv_afl), [tlv_aip, tlv_afl])]
+
+def reconstruct_generatearqc(ct):
+    # We assume it's a (77){(9f27,1)(9f36,2)(9f26,8)(9f10,>=7)}
+    assert 0x80 in ct
+    data=ct[ct.index(0x80)].V
+    assert len(data)/2 >= 18
+    cid_data=[ord(c) for c in data[:2].decode('hex')]
+    tlv_cid=TLV(0x9F27, len(cid_data), cid_data)
+    atc_data=[ord(c) for c in data[2:6].decode('hex')]
+    tlv_atc=TLV(0x9F36, len(atc_data), atc_data)
+    ac_data=[ord(c) for c in data[6:22].decode('hex')]
+    tlv_ac=TLV(0x9F26, len(ac_data), ac_data)
+    iad_data=[ord(c) for c in data[22:].decode('hex')]
+    tlv_iad=TLV(0x9F10, len(iad_data), iad_data)
+    return [TLV(0x77, len(tlv_cid)+len(tlv_atc)+len(tlv_ac)+len(tlv_iad), [tlv_cid, tlv_atc, tlv_ac, tlv_iad])]
+
 # If more EMV tags are needed, some sources are:
 # * http://cheef.ru/docs/HowTo/TAG.info
 # * http://www.emvlab.org/emvtags/all/
@@ -191,6 +222,7 @@ TLVdict = {
     0x83:  {'name':'Command Template',},
     0x84:  {'name':'dedicated file (df) name',
             'parse':lambda x: ''.join(["%02X" % i for i in x])}, 
+    0x87:  {'name':'Application Priority Indicator',},
     0x8A:  {'name':'Authorization Response Code',
             'known_in_cdol':True},
     0x8C:  {'name':'card risk management dol 1 (cdol1)',
@@ -220,10 +252,12 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F26:{'name':'Application Cryptogram (AC)',},
     0x9F27:{'name':'cryptogram information data',},
-    0x9F36:{'name':'Application Transaction counter (ATC)',},
     0x9F34:{'name':'cardholder verification method (cvm) results',
             'known_in_cdol':True},
-    0x9F35:{'name':'terminal type',},
+    0x9F35:{'name':'terminal type',
+            'known_in_cdol':True,
+            'known_in_pdol':True},
+    0x9F36:{'name':'Application Transaction counter (ATC)',},
     0x9F37:{'name':'Unpredictable Number (UN)',
             'known_in_cdol':True},
     0x9F38:{'name':'processing options dol (pdol)',
@@ -231,6 +265,8 @@ TLVdict = {
     0x9F42:{'name':'application currency code',},
     0x9F44:{'name':'application currency exponent',
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
+    0x9F45:{'name':'Data Authentication Code',
+            'known_in_cdol':True},
     0x9F4C:{'name':'ICC dynamic number',
             'known_in_cdol':True},
     0x9F55:{'name':'Issuer Authentication Flag',},
@@ -241,10 +277,36 @@ TLVdict = {
             'parse':lambda x :''.join([chr(i) for i in x])}, 
 }
 
+# TODO: should we unify pdol & cdol filling??
+
+def pdol_filling(tlv_pdol, debug = False):
+    pdol_data=''
+    if tlv_pdol is None:
+        return pdol_data
+    for t in tlv_pdol.V:
+        if t.known_in_pdol:
+            if t == 0x9F35:
+                # terminal type
+                data = '34' # From book, ch 8.6.1.2, Terminal Type = 34 (Annex A1 of Book 4 in the EMV 2000 specifications).
+            # Some other possible pdol contents?:
+            # Terminal Type (tag 9F35), Terminal Capabilities (9F33), Terminal Country Code (9F1A), or the Merchant Category Code (9F15)
+            # Authorized Amount (tag 81)
+            assert len(data)/2 == t.L
+            pdol_data += data
+            if debug:
+                print 'Will use %s for tag %s' % (data, t.hex_T)
+        else:
+            print 'Error I dont know how to handle tag %s in pdol' % t.hex_T
+            print 'If you want to fill it, add a known_in_pdol flag in TLVdict for that tag & value in pdol_filling()'
+            return None
+    return pdol_data
+
 def cdol_filling(tlv_cdol, tlv_aid, transaction_value = 0, unpredictable_number = 0, debug = False):
     # From book, ch 8.6.1.2
     # Most of them are null for EMV-CAP so we only check if there are not some unknown stuff in the template
     cdol_data=''
+    if tlv_cdol is None:
+        return cdol_data
     for t in tlv_cdol.V:
         if t.known_in_cdol:
             data = '00' * t.L
@@ -254,18 +316,21 @@ def cdol_filling(tlv_cdol, tlv_aid, transaction_value = 0, unpredictable_number 
             if t == 0x95:
                 # Terminal verification results: offline data authentication was not performed
                 data = '80' + '00' * (t.L -1)
-            elif t == 0x9A and tlv_aid.V == 'A0000000038002': # VisaRemAuthen
+            elif t == 0x9A and tlv_aid.V[:10] == 'A000000003': # Visa
                 data = '010101'
             elif t == 0x9F02 and transaction_value != 0:
                 data = '%%0%ii' % (t.L*2) % transaction_value
-            elif t == 0x9F37 and unpredictable_number != 0:
-                data = '%%0%ii' % (t.L*2) % unpredictable_number
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
                   # 01 = ICC Plain PIN verification - Fail cardholder verification if...
                   # 00 = Always
                   # 02 = Successful (e.g. for offline PIN)
                 data = '010002'
+            elif t == 0x9F35:
+                # terminal type, in [schouwenaar] it's in cdol rather than pdol
+                data = '34'
+            elif t == 0x9F37 and unpredictable_number != 0:
+                data = '%%0%ii' % (t.L*2) % unpredictable_number
             assert len(data)/2 == t.L
             cdol_data += data
             if debug:
