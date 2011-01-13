@@ -118,11 +118,15 @@ class TLV():
             raise 'Comparison only with T as int or with name, sorry'
     def __iter__(self):
         return self.V.__iter__()
-    def get(self, name):
-        if name in self:
-            return self.V[self.V.index(name)]
+    def get(self, name, multi=False):
+        l=[v for v in self.V if v == name]
+        if multi: # return list of matching tlvs, empty list if none found
+            return l
         else:
-            return None
+            if len(l)>0:
+                return l[0]
+            else:
+                return None
     def __eq__(self, tlv2):
         return self.__cmp__(tlv2)
     def __repr__(self):

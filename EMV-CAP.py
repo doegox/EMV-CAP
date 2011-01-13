@@ -22,7 +22,7 @@ def MyListReaders():
     return
 
 def MyConnect(reader_match=None, debug=False):
-    if len(reader_match) >=3 and reader_match[:3] == "foo":
+    if reader_match is not None and len(reader_match) >=3 and reader_match[:3] == "foo":
         return MyConnectFoo(reader_match, debug)
     reader=None
     try:
@@ -163,6 +163,52 @@ if args.debug:
 # ---------------------------------------------------------------------------------------------------
 # Select Application:
 current_app=None
+if args.verbose:
+    print 'Trying PSE: accessing 1PAY.SYS.DDF01 file...'
+file='1PAY.SYS.DDF01'
+CAPDU='00A40400%02X' % len(file) + file.encode('hex')
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+if len(RAPDU) != 0:
+    parsedRAPDU = TLVparser(RAPDU)
+    if args.debug:
+        print parsedRAPDU
+    assert 0x6F in parsedRAPDU
+    fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
+    assert 0xA5 in fci_template
+    fci_p_template = fci_template.get(0xA5)
+    assert 0x88 in fci_p_template
+    sfi = int(fci_p_template.get(0x88).V, 16)
+    record=1
+    p2 = (sfi << 3) + 0b100 # means P1 to be interpreted as a record
+    p1 = 0x01
+    if args.verbose:
+        print 'Read record %02X of SFI %02X...' % (record, sfi)
+    CAPDU='00B2%02X%02X00' % (p1, p2)
+    (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+    parsedRAPDU = TLVparser(RAPDU)
+    if args.debug:
+        print parsedRAPDU
+    assert 0x70 in parsedRAPDU
+    aef_data_template = parsedRAPDU[parsedRAPDU.index(0x70)]
+    if 0x61 in aef_data_template:
+        aidList = [app['AID'] for app in ApplicationsList]
+        for application_template in aef_data_template.get(0x61, multi=True):
+            assert 0x4F in application_template
+            aid = application_template.get(0x4F).V
+            if 0x50 in application_template:
+                label = application_template.get(0x50).prettyV
+            if args.verbose:
+                print "Application detected: %s (%s)" % (label, aid)
+            if aid in aidList:
+                if args.verbose:
+                    print "Application already in pre-defined list, skipping..."
+            else:
+                if args.verbose:
+                    print "Application not yet in pre-defined list, adding it..."
+                ApplicationsList.append({'name':label, 'description':label, 'AID':aid})
+
+if args.verbose:
+    print 'Trying list of pre-defined applications:'
 for app in ApplicationsList:
     CAPDU='00A40400'+("%02X" % (len(app['AID'])/2))+app['AID']
     (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
