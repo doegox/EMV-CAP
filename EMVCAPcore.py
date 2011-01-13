@@ -166,7 +166,7 @@ def TLVparser(raw, hasdata=True):
 TLVdict = {
     0x42:  {'name':'issuer authority',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
-    0x50:  {'name':'Application Label', #TODO
+    0x50:  {'name':'Application Label',
             'parse':lambda x:''.join([chr(i) for i in x])}, 
     0x57:  {'name':'track2 equivalent data',},
     0x5A:  {'name':'application Primary Account Number (PAN)',},

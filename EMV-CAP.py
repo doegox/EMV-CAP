@@ -160,7 +160,7 @@ group3.add_argument('-m', '--mode', dest='mode',
                    action='store',
                    type=int,
                    choices=[1, 2],
-                   help='M1/M2 mode selection (mandatory, unless -l is used)')
+                   help='M1/M2 mode selection (mandatory, unless -l or -L is used)')
 # We've to use type str for mdata instead of int to not mangle most left zeroes if any
 group3.add_argument('mdata', metavar='N', type=str, nargs='*', \
                    help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
