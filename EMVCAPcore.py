@@ -93,6 +93,7 @@ class TLV():
         self.tclass = T1 >> 6
         self.type = (T1 & 0x20) >> 5
         self.known_in_cdol = False
+        self.known_in_pdol = False
         if T in TLVdict:
             self.name = TLVdict[T]['name']
             if 'known_in_pdol' in TLVdict[T]:
@@ -252,8 +253,11 @@ TLVdict = {
     0x8D:  {'name':'card risk management dol 2 (cdol2)',
             'onlyTL':True,},
     0x8E:  {'name':'cardholder verification method (CMV) list',},
+    0x8F:  {'name':'Certification Authority Public Key Index',},
     0x91:  {'name':'issuer authentication data',
             'known_in_cdol':True},
+    0x92:  {'name':'Issuer Public Key Remainder',},
+    0x93:  {'name':'Signed Static Application Data',},
     0x94:  {'name':'application file locator',},
     0x95:  {'name':'Terminal Verification Results',
             'known_in_cdol':True},
@@ -265,6 +269,11 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F03:{'name':'Other Amount',
             'known_in_cdol':True},
+    0x9F07:{'name':'AUC - Application Usage Control',},
+    0x9F08:{'name':'Application Version Number',},
+    0x9F0D:{'name':'IAC - Default',},
+    0x9F0E:{'name':'IAC - Denial',},
+    0x9F0F:{'name':'IAC - Online',},
     0x9F10:{'name':'Issuer Application Data',},
     0x9F12:{'name':'Application Preferred Name',
             'parse':lint2ascii}, 
@@ -274,6 +283,7 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F26:{'name':'Application Cryptogram (AC)',},
     0x9F27:{'name':'cryptogram information data',},
+    0x9F32:{'name':'Issuer Public Key Exponent',},
     0x9F34:{'name':'cardholder verification method (cvm) results',
             'known_in_cdol':True},
     0x9F35:{'name':'terminal type',
@@ -289,8 +299,13 @@ TLVdict = {
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
     0x9F45:{'name':'Data Authentication Code',
             'known_in_cdol':True},
+    0x9F47:{'name':'ICC Public Key Exponent',},
+    0x9F48:{'name':'ICC Public Key Remainder',},
+    0x9F49:{'name':'DDOL',},
+    0x9F4A:{'name':'SDA Tag List',},
     0x9F4C:{'name':'ICC dynamic number',
             'known_in_cdol':True},
+    0x9F4D:{'name':'Log entry',},
     0x9F55:{'name':'Issuer Authentication Flag',},
     0x9F56:{'name':'Issuer Authentication Indicator / IPB',},
     0xA5:  {'name':'fci proprietary template',},
