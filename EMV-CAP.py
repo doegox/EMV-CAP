@@ -5,6 +5,19 @@
 # disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/ ou par courrier postal 
 # à Creative Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
 
+# L'utilisation de ce logiciel pour des opérations financières réelles peut entraîner 
+# un certain risque. En effet l'intérêt d'utiliser une calculette est d'isoler votre 
+# carte bancaire des vilains malwares. L'utiliser sur un lecteur non sécurisé, c'est risquer 
+# qu'un keylogger intercepte votre PIN, qu'un malware accède aux informations de votre carte, 
+# voire qu'il intercepte votre transaction pour la modifier ou qu'il procède lui-même à 
+# ses propres transactions.
+
+# LIMITATION DE RESPONSABILITE
+# DANS LA MESURE AUTORISEE PAR LA LOI APPLICABLE, LE DONNEUR DE LICENCE NE SERA EN AUCUN CAS 
+# RESPONSABLE A VOTRE EGARD, POUR QUELQUE PREJUDICE QUE CE SOIT, DIRECT OU INDIRECT, MATERIEL 
+# OU MORAL, RESULTANT DE L’EXECUTION DE LA PRESENTE LICENCE OU DE L’UTILISATION DE L’OEUVRE, 
+# MEME SI LE DONNEUR DE LICENCE A ETE INFORME DE LA POSSIBILITE DE TELS PREJUDICES.
+
 # All refs to "book" are from "Implementing Electronic Card Payment Systems" by Cristian Radu
 
 import sys
