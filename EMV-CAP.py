@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011
+# Cette création est mise à disposition selon le Contrat Attribution-NoDerivs 2.0 Belgium 
+# disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/ ou par courrier postal 
+# à Creative Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
+
 # All refs to "book" are from "Implementing Electronic Card Payment Systems" by Cristian Radu
 
 import sys
