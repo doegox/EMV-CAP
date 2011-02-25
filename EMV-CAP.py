@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: latin-1
 
 # Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011
 # Cette création est mise à disposition selon le Contrat Attribution-NoDerivs 2.0 Belgium 

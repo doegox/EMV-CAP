@@ -1,3 +1,4 @@
+# coding: latin-1
 from EMVCAPcore import hex2lint
 
 # Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011

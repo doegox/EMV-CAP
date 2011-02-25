@@ -1,3 +1,4 @@
+# coding: latin-1
 from Crypto.Cipher import DES
 
 # Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011
