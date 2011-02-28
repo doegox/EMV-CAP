@@ -162,7 +162,7 @@ for i in args.mdata:
     assert i.isdigit()
 
 if args.parsetlv:
-    print TLVparser([ord(c) for c in args.parsetlv.decode('hex')])
+    print TLVparser([ord(c) for c in args.parsetlv.replace(":","").decode('hex')])
     sys.exit()
 
 import smartcard
