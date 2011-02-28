@@ -233,7 +233,8 @@ TLVdict = {
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F28:{'name':'issuer country code',},
     0x5F2A:{'name':'Transaction Currency Code',
-            'known_in_cdol':True},
+            'known_in_cdol':True,
+            'known_in_pdol':True},
     0x5F2C:{'name':'Cardholder nationality',},
     0x5F2D:{'name':'language preference',
             'parse':lint2ascii}, 
@@ -313,7 +314,7 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F4D:{'name':'Log entry',},
     0x9F55:{'name':'Issuer Authentication Flag',},
-    0x9F56:{'name':'Issuer Authentication Indicator / IPB',},
+    0x9F56:{'name':'Issuer Proprietary Bitmap (IPB)',},
     0xA5:  {'name':'fci proprietary template',},
     0xBF0C:{'name':'fci issuer discretionary data',},
     0xDF07:{'name':'unknown tag DF07 (Banksys ID??)',
@@ -331,6 +332,10 @@ def pdol_filling(tlv_pdol, debug = False):
             if t == 0x9F35:
                 # terminal type
                 data = '34' # From book, ch 8.6.1.2, Terminal Type = 34 (Annex A1 of Book 4 in the EMV 2000 specifications).
+            if t == 0x5F2A:
+                # transaction currency code, cf http://www.iso.org/iso/fr/support/faqs/faqs_widely_used_standards/widely_used_standards_other/currency_codes/currency_codes_list-1.htm
+                # data = '0978' # Euro
+                data = '0000'
             # Some other possible pdol contents?:
             # Terminal Type (tag 9F35), Terminal Capabilities (9F33), Terminal Country Code (9F1A), or the Merchant Category Code (9F15)
             # Authorized Amount (tag 81)
