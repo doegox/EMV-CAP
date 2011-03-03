@@ -301,6 +301,11 @@ TLVdict = {
             'known_in_cdol':True},
     0x9F38:{'name':'processing options dol (pdol)',
             'onlyTL':True,},
+    0x9F40:{'name':'Additional Terminal Capabilities',
+            # Indicates the data input and output capabilities of the terminal) (see Annex A3 in Book 4 [3])
+            # Seen in PDOL of UBS Maestro, but don't know how to fill those 5 bytes for EMV-CAP
+            # 'known_in_pdol':True,
+           },
     0x9F42:{'name':'application currency code',},
     0x9F44:{'name':'application currency exponent',
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
