@@ -167,16 +167,27 @@ def TLVparser(raw, hasdata=True):
     if len(raw) == 0:
         return False
     # EMV 2000 only supports tagnames of length 1 or 2 (from book, ch4.2)
-    # should we support lengths > 127 (and length coded on more than one byte)?
+    # should we support tagnames of lengths > 2?
     if raw[0] & 0x1F == 0x1F:
         T = (raw[0]<<8) + raw[1]
-        L = raw[2]
-        raw = raw[3:]
+        raw = raw[2:]
     else:
         T = raw[0]
-        L = raw[1]
-        raw = raw[2:]
-
+        raw = raw[1:]
+    if raw[0] < 128:
+        L = raw[0]
+        raw = raw[1:]
+    else:
+        LL = raw[0] & 0x7F
+        if LL == 1:
+            L = raw[1]
+            raw = raw[2:]
+        elif LL == 2:
+            L = (raw[1]<<8) + raw[2]
+            raw = raw[3:]
+        else:
+            # length > 65535??? then it's probably still a 1-byte length
+            return False
     if not hasdata:
         V = None
         # raw = raw
@@ -221,26 +232,29 @@ def reconstruct_generatearqc(ct):
 # * https://cardpeek.googlecode.com/svn-history/trunk/dot_cardpeek_dir/scripts/emv.lua
 TLVdict = {
     0x42:  {'name':'issuer authority',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
     0x4F:  {'name':'AID',},
     0x50:  {'name':'Application Label',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
     0x57:  {'name':'track2 equivalent data',},
     0x5A:  {'name':'application Primary Account Number (PAN)',},
+    0x5F20:{'name':'Cardholder Name',
+            'parse':lint2ascii},
     0x5F24:{'name':'application expiration date',
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F25:{'name':'application effective date',
             'parse':lambda x:'YY=%02X MM=%02X DD=%02X' % (x[0], x[1], x[2])}, 
     0x5F28:{'name':'issuer country code',},
+    0x5F30:{'name':'Service Code',},
     0x5F2A:{'name':'Transaction Currency Code',
             'known_in_cdol':True,
             'known_in_pdol':True},
     0x5F2C:{'name':'Cardholder nationality',},
     0x5F2D:{'name':'language preference',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
     0x5F34:{'name':'application PAN sequence number',},
     0x5F55:{'name':'Issuer Country Code (alpha2 format)',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
     0x61:  {'name':'Application Template'},
     0x6F:  {'name':'fci template',},
     0x70:  {'name':'aef data template',},
@@ -250,7 +264,7 @@ TLVdict = {
     0x83:  {'name':'Command Template',},
     0x84:  {'name':'dedicated file (df) name',},
 # can be bin (AID) or ascii...
-#            'parse':lint2ascii}, 
+#            'parse':lint2ascii},
     0x87:  {'name':'Application Priority Indicator',},
     0x88:  {'name':'Short File Identifier (SFI)',},
     0x8A:  {'name':'Authorization Response Code',
@@ -261,6 +275,7 @@ TLVdict = {
             'onlyTL':True,},
     0x8E:  {'name':'cardholder verification method (CMV) list',},
     0x8F:  {'name':'Certification Authority Public Key Index',},
+    0x90:  {'name':'Issuer Public Key Certificate',},
     0x91:  {'name':'issuer authentication data',
             'known_in_cdol':True},
     0x92:  {'name':'Issuer Public Key Remainder',},
@@ -282,12 +297,17 @@ TLVdict = {
     0x9F0E:{'name':'IAC - Denial',},
     0x9F0F:{'name':'IAC - Online',},
     0x9F10:{'name':'Issuer Application Data',},
+    0x9F11:{'name':'Issuer Code Table Index',},
     0x9F12:{'name':'Application Preferred Name',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
+    0x9F14:{'name':'Lower Consecutive Offline Limit',},
     0x9F17:{'name':'PIN Retry Counter',
             'parse':lambda x: x[0]},
     0x9F1A:{'name':'Terminal Country Code',
             'known_in_cdol':True},
+    0x9F1F:{'name':'Track 1 Discretionary Data',
+            'parse':lint2ascii},
+    0x9F23:{'name':'Upper Consecutive Offline Limit',},
     0x9F26:{'name':'Application Cryptogram (AC)',},
     0x9F27:{'name':'cryptogram information data',},
     0x9F32:{'name':'Issuer Public Key Exponent',},
@@ -311,9 +331,11 @@ TLVdict = {
             'parse':lambda x :("%i (0." % x[0]) + ("0" * x[0]) + ")"}, 
     0x9F45:{'name':'Data Authentication Code',
             'known_in_cdol':True},
+    0x9F46:{'name':'ICC Public Key Certificate',},
     0x9F47:{'name':'ICC Public Key Exponent',},
     0x9F48:{'name':'ICC Public Key Remainder',},
-    0x9F49:{'name':'DDOL',},
+    0x9F49:{'name':'DDOL',
+            'onlyTL':True,},
     0x9F4A:{'name':'SDA Tag List',},
     0x9F4C:{'name':'ICC dynamic number',
             'known_in_cdol':True},
@@ -323,7 +345,7 @@ TLVdict = {
     0xA5:  {'name':'fci proprietary template',},
     0xBF0C:{'name':'fci issuer discretionary data',},
     0xDF07:{'name':'unknown tag DF07 (Banksys ID??)',
-            'parse':lint2ascii}, 
+            'parse':lint2ascii},
 }
 
 # TODO: should we unify pdol & cdol filling??
