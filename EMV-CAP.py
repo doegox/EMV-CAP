@@ -91,6 +91,24 @@ def MyConnect(reader_match=None, debug=False):
         print 'No card found!'
         del(connection)
         return None
+    atr = connection.getATR()
+    if (args.warmreset == 'yes') or \
+        (args.warmreset == 'auto' and atr[0] == 0x3F):
+        # inverse convention
+        # seen on French cards with another ATR behind soft-reset
+        # let's try...
+        if args.debug:
+            print "ATR:          " + ''.join(["%02X" % i for i in connection.getATR()])
+            print "Trying a warm reset to get another ATR..."
+        result, activeProtocol = smartcard.scard.SCardReconnect(
+            connection.component.hcard,
+            smartcard.scard.SCARD_SHARE_EXCLUSIVE,
+            smartcard.scard.SCARD_PROTOCOL_ANY,
+            smartcard.scard.SCARD_RESET_CARD)
+        if result != smartcard.scard.SCARD_S_SUCCESS:
+            print 'Warm reset failed!'
+            del(connection)
+            return None
     return connection
 
 def myTransmit(connection, CAPDU, debug=False, maskpin=True):
@@ -158,6 +176,12 @@ group3.add_argument('-m', '--mode', dest='mode',
 # We've to use type str for mdata instead of int to not mangle most left zeroes if any
 group3.add_argument('mdata', metavar='N', type=str, nargs='*', \
                    help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
+group3.add_argument('--warmreset', dest='warmreset',
+                   action='store',
+                   type=str,
+                   choices=['auto', 'yes', 'no'],
+                   default='auto',
+                   help='Warm reset: yes / no / auto (default)  If \'auto\' it will perform a warm reset if the ATR starts with 3F (indirect convention)')
 
 args = parser.parse_args()
 if args.listapps:
