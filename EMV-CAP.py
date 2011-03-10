@@ -2,27 +2,31 @@
 # coding: latin-1
 
 # Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011
-# Cette crŽation est mise ˆ disposition selon le Contrat Attribution-NoDerivs 2.0 Belgium 
-# disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/ ou par courrier postal 
-# ˆ Creative Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
+# Cette crŽation est mise ˆ disposition selon
+# le Contrat Attribution-NoDerivs 2.0 Belgium
+# disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
+# ou par courrier postal ˆ Creative Commons, 171 Second Street,
+# Suite 300, San Francisco, California 94105, USA.
 
-# L'utilisation de ce logiciel pour des opŽrations financires rŽelles peut entra”ner 
-# un certain risque. En effet l'intŽrt d'utiliser une calculette est d'isoler votre 
-# carte bancaire des vilains malwares. L'utiliser sur un lecteur non sŽcurisŽ, c'est risquer 
-# qu'un keylogger intercepte votre PIN, qu'un malware accde aux informations de votre carte, 
-# voire qu'il intercepte votre transaction pour la modifier ou qu'il procde lui-mme ˆ 
-# ses propres transactions.
+# L'utilisation de ce logiciel pour des opŽrations financires rŽelles
+# peut entra”ner un certain risque. En effet l'intŽrt d'utiliser une
+# calculette est d'isoler votre carte bancaire des vilains malwares.
+# L'utiliser sur un lecteur non sŽcurisŽ, c'est risquer qu'un keylogger
+# intercepte votre PIN, qu'un malware accde aux informations de votre carte,
+# voire qu'il intercepte votre transaction pour la modifier ou qu'il procde
+# lui-mme ˆ ses propres transactions.
 
 # LIMITATION DE RESPONSABILITE
-# DANS LA MESURE AUTORISEE PAR LA LOI APPLICABLE, LE DONNEUR DE LICENCE NE SERA EN AUCUN CAS 
-# RESPONSABLE A VOTRE EGARD, POUR QUELQUE PREJUDICE QUE CE SOIT, DIRECT OU INDIRECT, MATERIEL 
-# OU MORAL, RESULTANT DE LÕEXECUTION DE LA PRESENTE LICENCE OU DE LÕUTILISATION DE LÕOEUVRE, 
-# MEME SI LE DONNEUR DE LICENCE A ETE INFORME DE LA POSSIBILITE DE TELS PREJUDICES.
+# DANS LA MESURE AUTORISEE PAR LA LOI APPLICABLE, LE DONNEUR DE LICENCE NE
+# SERA EN AUCUN CAS RESPONSABLE A VOTRE EGARD, POUR QUELQUE PREJUDICE QUE
+# CE SOIT, DIRECT OU INDIRECT, MATERIEL OU MORAL, RESULTANT DE LÕEXECUTION
+# DE LA PRESENTE LICENCE OU DE LÕUTILISATION DE LÕOEUVRE, MEME SI LE DONNEUR
+# DE LICENCE A ETE INFORME DE LA POSSIBILITE DE TELS PREJUDICES.
 
 # Limitation of Liability.
 #
-#  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-# WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO CONVEYS THE PROGRAM, 
+# IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+# WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO CONVEYS THE PROGRAM,
 # BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
 # INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY
 # TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
@@ -32,17 +36,19 @@
 # SUCH DAMAGES.
 
 
-# All refs to "book" are from "Implementing Electronic Card Payment Systems" by Cristian Radu
+# All refs to "book" are from "Implementing Electronic Card Payment Systems"
+# by Cristian Radu
 
 import sys
 import argparse
 from EMVCAPfoo  import *
 from EMVCAPcore import *
 
+
 def MyListReaders():
     print 'Available readers:'
     try:
-        readers=smartcard.System.readers()
+        readers = smartcard.System.readers()
         if len(readers) == 0:
             print 'Warning: no reader found!'
         else:
@@ -50,15 +56,18 @@ def MyListReaders():
                 print i, ' :', readers[i]
     except smartcard.pcsc.PCSCExceptions.EstablishContextException:
         print 'Warning: cannot connect to PC/SC daemon!'
-    print 'foo: provides fake reader and card for demo/debug purposes (PIN=1234)'
+    print 'foo: provides fake reader and card',
+    print 'for demo/debug purposes (PIN=1234)'
     return
 
+
 def MyConnect(reader_match=None, debug=False):
-    if reader_match is not None and len(reader_match) >=3 and reader_match[:3] == "foo":
+    if reader_match is not None and len(reader_match) >= 3 and \
+       reader_match[:3] == "foo":
         return MyConnectFoo(reader_match, debug)
-    reader=None
+    reader = None
     try:
-        readers=smartcard.System.readers()
+        readers = smartcard.System.readers()
         if len(readers) == 0:
             print 'error: no reader found!'
             return None
@@ -68,20 +77,21 @@ def MyConnect(reader_match=None, debug=False):
 
     if reader_match is not None:
         try:
-            reader_index=int(reader_match)
-            reader=readers[reader_index]
+            reader_index = int(reader_match)
+            reader = readers[reader_index]
         except:
             for r in readers:
                 if reader_match in repr(r):
-                    reader=r
+                    reader = r
                     break
         if reader is None:
-            print 'error: no reader found according to option -r', reader_match
+            print 'error: no reader found according to option -r',
+            print reader_match
             return None
     if reader is None:
-        reader=readers[0]
+        reader = readers[0]
     try:
-        connection=reader.createConnection()
+        connection = reader.createConnection()
     except:
         print 'Fail connecting to', reader
         return None
@@ -98,7 +108,8 @@ def MyConnect(reader_match=None, debug=False):
         # seen on French cards with another ATR behind soft-reset
         # let's try...
         if args.debug:
-            print "ATR:          " + ''.join(["%02X" % i for i in connection.getATR()])
+            print "ATR:          " + \
+                  ''.join(["%02X" % i for i in connection.getATR()])
             print "Trying a warm reset to get another ATR..."
         result, activeProtocol = smartcard.scard.SCardReconnect(
             connection.component.hcard,
@@ -111,22 +122,24 @@ def MyConnect(reader_match=None, debug=False):
             return None
     return connection
 
+
 def myTransmit(connection, CAPDU, debug=False, maskpin=True):
-    fetch_more=False
+    fetch_more = False
     if debug:
-        if maskpin and CAPDU[:4]=="0020":
-            print "CAPDU:        " + CAPDU[:12] + "*** (masked as it contains PIN info)"
+        if maskpin and CAPDU[:4] == "0020":
+            print "CAPDU:        " + CAPDU[:12] +\
+                  "*** (masked as it contains PIN info)"
         else:
             print "CAPDU:        " + CAPDU
     (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
     if debug:
         print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
-    if sw1 == 0x61: # More bytes available
-        CAPDU='00C00000'+("%02X" % sw2)
-        fetch_more=True
-    if sw1 == 0x6c: # Wrong length
-        CAPDU=CAPDU[:4*2]+("%02X" % sw2)
-        fetch_more=True
+    if sw1 == 0x61:  # More bytes available
+        CAPDU = '00C00000' + ("%02X" % sw2)
+        fetch_more = True
+    if sw1 == 0x6c:  # Wrong length
+        CAPDU = CAPDU[:4 * 2] + ("%02X" % sw2)
+        fetch_more = True
     if fetch_more:
         if debug:
             print "CAPDU:        " + CAPDU
@@ -152,7 +165,8 @@ group1.add_argument('-l', '--listreaders', dest='listreaders',
                    help='print list of available readers and exit')
 group1.add_argument('-L', '--listapps', dest='listapps',
                    action='store_true', default=False,
-                   help='print list of available applications on the card and exit')
+                   help='print list of available applications on the card ' +\
+                        'and exit')
 group1.add_argument('--tlv', dest='parsetlv',
                    action='store',
                    type=str,
@@ -160,7 +174,9 @@ group1.add_argument('--tlv', dest='parsetlv',
 group2 = parser.add_argument_group('Global options')
 group2.add_argument('-r', '--reader', dest='reader_match',
                    metavar='{<index>, <reader_substring>}',
-                   help='select one specific reader with reader index, name string or sub-string otherwise first reader found will be used. ')
+                   help='select one specific reader with reader index, ' +\
+                        'name string or sub-string otherwise first reader ' +\
+                        'found will be used. ')
 group2.add_argument('-d', '--debug', dest='debug',
                    action='store_true', default=False,
                    help='print exchanged APDU for debugging')
@@ -172,21 +188,27 @@ group3.add_argument('-m', '--mode', dest='mode',
                    action='store',
                    type=int,
                    choices=[1, 2],
-                   help='M1/M2 mode selection (mandatory, unless -l or -L is used)')
-# We've to use type str for mdata instead of int to not mangle most left zeroes if any
+                   help='M1/M2 mode selection (mandatory, unless -l or -L ' +\
+                        'is used)')
+# We've to use type str for mdata instead of int to not mangle
+# most left zeroes if any
 group3.add_argument('mdata', metavar='N', type=str, nargs='*', \
-                   help='number(s) as M1/M2 data: max one 8-digit number for M1 and max 10 10-digit numbers for M2')
+                   help='number(s) as M1/M2 data: max one 8-digit number ' +\
+                        'for M1 and max 10 10-digit numbers for M2')
 group3.add_argument('--warmreset', dest='warmreset',
                    action='store',
                    type=str,
                    choices=['auto', 'yes', 'no'],
                    default='auto',
-                   help='Warm reset: yes / no / auto (default)  If \'auto\' it will perform a warm reset if the ATR starts with 3F (indirect convention)')
+                   help='Warm reset: yes / no / auto (default)  ' +\
+                        'If \'auto\' it will perform a warm reset if ' +\
+                        'the ATR starts with 3F (indirect convention)')
 
 args = parser.parse_args()
 if args.listapps:
     args.verbose = True
-if args.mode is None and args.listreaders is False and args.listapps is False and args.parsetlv is None:
+if args.mode is None and args.listreaders is False and \
+   args.listapps is False and args.parsetlv is None:
     print 'error: argument -m/--mode is required'
     parser.print_usage()
     sys.exit()
@@ -199,7 +221,8 @@ for i in args.mdata:
     assert i.isdigit()
 
 if args.parsetlv:
-    print TLVparser([ord(c) for c in args.parsetlv.replace(":","").decode('hex')])
+    print TLVparser(
+        [ord(c) for c in args.parsetlv.replace(":", "").decode('hex')])
     sys.exit()
 
 import smartcard
@@ -211,18 +234,18 @@ connection = MyConnect(args.reader_match, args.debug)
 if connection is None:
     sys.exit()
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # ATR
 if args.debug:
     print "ATR:          " + ''.join(["%02X" % i for i in connection.getATR()])
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Select Application:
-current_app=None
+current_app = None
 if args.verbose:
     print 'Trying PSE: accessing 1PAY.SYS.DDF01 file...'
-file='1PAY.SYS.DDF01'
-CAPDU='00A40400%02X' % len(file) + file.encode('hex')
+file = '1PAY.SYS.DDF01'
+CAPDU = '00A40400%02X' % len(file) + file.encode('hex')
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 if len(RAPDU) != 0:
     parsedRAPDU = TLVparser(RAPDU)
@@ -234,12 +257,12 @@ if len(RAPDU) != 0:
     fci_p_template = fci_template.get(0xA5)
     assert 0x88 in fci_p_template
     sfi = int(fci_p_template.get(0x88).V, 16)
-    record=1
-    p2 = (sfi << 3) + 0b100 # means P1 to be interpreted as a record
+    record = 1
+    p2 = (sfi << 3) + 0b100  # means P1 to be interpreted as a record
     p1 = 0x01
     if args.verbose:
         print 'Read record %02X of SFI %02X...' % (record, sfi)
-    CAPDU='00B2%02X%02X00' % (p1, p2)
+    CAPDU = '00B2%02X%02X00' % (p1, p2)
     (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
     parsedRAPDU = TLVparser(RAPDU)
     if args.debug:
@@ -257,20 +280,23 @@ if len(RAPDU) != 0:
                 print "Application detected: %s (%s)" % (label, aid)
             if aid in aidList:
                 if args.verbose:
-                    print "Application already in pre-defined list, skipping..."
+                    print "Application already in pre-defined list,",
+                    print "skipping..."
             else:
                 if args.verbose:
-                    print "Application not yet in pre-defined list, adding it..."
-                ApplicationsList.append({'name':label, 'description':label, 'AID':aid})
+                    print "Application not yet in pre-defined list,",
+                    print "adding it..."
+                ApplicationsList.append({'name': label, 'description': label, \
+                    'AID': aid})
 
 if args.verbose:
     print 'Trying list of pre-defined applications:'
 for app in ApplicationsList:
-    CAPDU='00A40400'+("%02X" % (len(app['AID'])/2))+app['AID']
+    CAPDU = '00A40400' + ("%02X" % (len(app['AID']) / 2)) + app['AID']
     (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
     if len(RAPDU) != 0:
         if current_app is None:
-            current_app=app
+            current_app = app
         if args.verbose:
             print "Application detected: " + app['description']
         if args.debug:
@@ -287,15 +313,16 @@ if current_app is None:
 if args.verbose:
     print 'Will use the following application: ' + current_app['name']
 # Do a select again as we might have selected also other apps while scanning:
-CAPDU='00A40400'+("%02X" % (len(current_app['AID'])/2))+current_app['AID']
+CAPDU = '00A40400' + ("%02X" % (len(current_app['AID']) / 2)) +\
+    current_app['AID']
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 assert 0x6F in parsedRAPDU
 fci_template = parsedRAPDU[parsedRAPDU.index(0x6F)]
 assert 0x84 in fci_template
 tlv_aid = fci_template.get(0x84)
-tlv_pdol=None
-psn_to_be_used=False
+tlv_pdol = None
+psn_to_be_used = False
 if 0xA5 in fci_template:
     fci_proprietary_template = fci_template.get(0xA5)
     if 0x9F38 in fci_proprietary_template:
@@ -303,12 +330,16 @@ if 0xA5 in fci_template:
     if 0xBF0C in fci_proprietary_template:
         fci_issuer_discretionary_data = fci_proprietary_template.get(0xBF0C)
         if 0x9F55 in fci_issuer_discretionary_data:
-            issuer_authentication_flag = fci_issuer_discretionary_data.get(0x9F55)
-            psn_to_be_used = (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
+            issuer_authentication_flag = \
+                fci_issuer_discretionary_data.get(0x9F55)
+            psn_to_be_used = \
+                (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
             if psn_to_be_used:
-                print 'Warning: card tells to use PSN but this was never tested, please report success/failure to developers, thanks!'
+                print 'Warning: card tells to use PSN but this was never',
+                print 'tested, please report success/failure to developers,',
+                print 'thanks!'
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Initiate transaction / Get Processing Options:
 if args.verbose:
     print 'Get Processing Options...'
@@ -316,41 +347,43 @@ if args.verbose:
 pdol_data = pdol_filling(tlv_pdol, args.debug)
 if pdol_data is None:
     sys.exit()
-CAPDU = '80A80000%02X83%02X%s' % ((len(pdol_data)/2)+2, (len(pdol_data)/2), pdol_data)
+CAPDU = '80A80000%02X83%02X%s' % \
+    ((len(pdol_data) / 2) + 2, (len(pdol_data) / 2), pdol_data)
 if args.debug:
-    print TLVparser(hex2lint(CAPDU[5*2:]))
+    print TLVparser(hex2lint(CAPDU[5 * 2:]))
 
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
     print parsedRAPDU
-files=[]
+files = []
 if 0x80 in parsedRAPDU:
     # Answer is not TLV encoded, we only get values according to a template
     if args.verbose:
-        print 'Warning: answer to Get Processing Options is not TLV, attempting to reconstruct it...'
-    parsedRAPDU=reconstruct_processingoptions(parsedRAPDU)
+        print 'Warning: answer to Get Processing Options is not TLV,',
+        print 'attempting to reconstruct it...'
+    parsedRAPDU = reconstruct_processingoptions(parsedRAPDU)
     if args.debug:
         print parsedRAPDU
 assert 0x77 in parsedRAPDU
 rsp_msg_template2 = parsedRAPDU[parsedRAPDU.index(0x77)]
 if 0x94 in rsp_msg_template2:
     application_file_locator = rsp_msg_template2.get(0x94)
-    raw_afl=application_file_locator.V.decode('hex')
-    for i in range(application_file_locator.L/4):
-        files.append([ord(x) for x in raw_afl[i*4:i*4+4]])
+    raw_afl = application_file_locator.V.decode('hex')
+    for i in range(application_file_locator.L / 4):
+        files.append([ord(x) for x in raw_afl[i * 4:i * 4 + 4]])
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Read files
 for f in files:
     # From book, ch 4.3.2.1
     sfi = f[0] >> 3
-    p2 = (sfi << 3) + 0b100 # means P1 to be interpreted as a record
-    for record in range(f[1], f[2]+1):
+    p2 = (sfi << 3) + 0b100  # means P1 to be interpreted as a record
+    for record in range(f[1], f[2] + 1):
         p1 = record
         if args.verbose:
             print 'Read record %02X of SFI %02X...' % (record, sfi)
-        CAPDU='00B2%02X%02X00' % (p1, p2)
+        CAPDU = '00B2%02X%02X00' % (p1, p2)
         (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
         parsedRAPDU = TLVparser(RAPDU)
         if args.debug:
@@ -373,10 +406,10 @@ assert hex_ipb
 assert tlv_cdol1
 assert tlv_cdol2
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Get PIN Try Counter
 # From book, ch 6.6.4
-CAPDU='80CA9F1700'
+CAPDU = '80CA9F1700'
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
@@ -386,37 +419,40 @@ ntry = int(parsedRAPDU[parsedRAPDU.index(0x9F17)].V, 16)
 if ntry < 3 or args.verbose:
     print 'Still %i PIN tries available!' % ntry
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Verify PIN
 # From book, ch 6.6.4
-pin=getpass.getpass('Enter PIN (enter to abort)  :')
-while len(pin)<4 or len(pin)>12 or not pin.isdigit():
+pin = getpass.getpass('Enter PIN (enter to abort)  :')
+while len(pin) < 4 or len(pin) > 12 or not pin.isdigit():
     if len(pin) == 0:
         sys.exit()
-    pin=getpass.getpass('Error! I expect a proper PIN: ')
-CAPDU='00200080082%i' % len(pin)+pin+'F'*(14-len(pin))
+    pin = getpass.getpass('Error! I expect a proper PIN: ')
+CAPDU = '00200080082%i' % len(pin) + pin + 'F' * (14 - len(pin))
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 if sw1 != 0x90 or sw2 != 00:
     print 'Error wrong PIN!!!'
     sys.exit()
 del(pin)
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Generate Application Cryptogram ARQC
 if args.verbose:
     print 'Generate Application Cryptogram ARQC...'
 
-# TODO handle CAP Sign, with amount into transaction_value and account into unpredictable_number
+# TODO handle CAP Sign, with amount into transaction_value and
+# account into unpredictable_number
 transaction_value = 0
 unpredictable_number = 0
 if args.mode == 1 and len(args.mdata) == 1:
     unpredictable_number = int(args.mdata[0])
-    # TODO for ABN-AMRO NL there is apparently a scrambling of UN, cf [schouwenaar] annex B
+    # TODO for ABN-AMRO NL there is apparently a scrambling of UN,
+    # cf [schouwenaar] annex B
 
-cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, unpredictable_number, args.debug)
+cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, \
+    unpredictable_number, args.debug)
 if cdol1_data is None:
     sys.exit()
-CAPDU='80AE8000%02X%s' % (len(cdol1_data)/2, cdol1_data)
+CAPDU = '80AE8000%02X%s' % (len(cdol1_data) / 2, cdol1_data)
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
@@ -424,8 +460,9 @@ if args.debug:
 if 0x80 in parsedRAPDU:
     # Answer is not TLV encoded, we only get values according to a template
     if args.verbose:
-        print 'Warning: answer to GenerateAC is not TLV, attempting to reconstruct it...'
-    parsedRAPDU=reconstruct_generatearqc(parsedRAPDU)
+        print 'Warning: answer to GenerateAC is not TLV,',
+        print 'attempting to reconstruct it...'
+    parsedRAPDU = reconstruct_generatearqc(parsedRAPDU)
     if args.debug:
         print parsedRAPDU
 assert 0x77 in parsedRAPDU
@@ -439,16 +476,18 @@ hex_cid = resp.get(0x9F27).V
 assert 0x9F36 in resp
 hex_atc = resp.get(0x9F36).V
 if args.verbose:
-    print 'Got CID=%s ATC=%s AC=%s IAD=%s' % (hex_cid, hex_atc, hex_ac, hex_iad)
+    print 'Got CID=%s ATC=%s AC=%s IAD=%s' % \
+        (hex_cid, hex_atc, hex_ac, hex_iad)
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Generate Application Cryptogram AAC
 if args.verbose:
     print 'Generate Application Cryptogram AAC...'
-cdol2_data = cdol_filling(tlv_cdol2, tlv_aid, transaction_value, unpredictable_number, args.debug)
+cdol2_data = cdol_filling(tlv_cdol2, tlv_aid, transaction_value, \
+    unpredictable_number, args.debug)
 if cdol2_data is None:
     sys.exit()
-CAPDU='80AE0000%02X%s' % (len(cdol2_data)/2, cdol2_data)
+CAPDU = '80AE0000%02X%s' % (len(cdol2_data) / 2, cdol2_data)
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
@@ -456,27 +495,30 @@ if args.debug:
 if 0x80 in parsedRAPDU:
     # Answer is not TLV encoded, we only get values according to a template
     if args.verbose:
-        print 'Warning: answer to GenerateAC is not TLV, attempting to reconstruct it...'
-    parsedRAPDU=reconstruct_generatearqc(parsedRAPDU)
+        print 'Warning: answer to GenerateAC is not TLV,',
+        print 'attempting to reconstruct it...'
+    parsedRAPDU = reconstruct_generatearqc(parsedRAPDU)
     if args.debug:
         print parsedRAPDU
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # From here no more interaction with the card needed
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Mixing TDS with cryptogram if Mode2 with TDS
 if args.mode == 2 and len(args.mdata) > 0:
     if args.verbose:
         print 'Mixing TDS with cryptogram...'
     hex_ac = mix_tds(hex_ac, args.mdata, args.debug)
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Display OTP
 if args.verbose:
     print 'Computing OTP...'
 if psn_to_be_used:
-    otp=generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, hex_psn, debug=args.debug)
+    otp = generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, \
+        hex_psn, debug=args.debug)
 else:
-    otp=generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, debug=args.debug)
+    otp = generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, \
+        debug=args.debug)
 print 'Response: %i' % otp
