@@ -1,7 +1,9 @@
 # coding: latin-1
 from Crypto.Cipher import DES
 
-# Copyright Jean-Pierre Szikora et Philippe Teuwen - 2011
+# Copyright 2011
+#   Philippe Teuwen <phil@teuwen.org>
+#   Jean-Pierre Szikora
 # Cette crŽation est mise ˆ disposition selon
 # le Contrat Attribution-NoDerivs 2.0 Belgium
 # disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
