@@ -3,7 +3,7 @@ from EMVCAPcore import hex2lint
 
 # Copyright 2011
 #   Philippe Teuwen <phil@teuwen.org>
-#   Jean-Pierre Szikora
+#   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
 # Cette création est mise à disposition selon
 # le Contrat Attribution-NoDerivs 2.0 Belgium
 # disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
