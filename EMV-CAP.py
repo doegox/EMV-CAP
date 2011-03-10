@@ -25,6 +25,13 @@
 # DE LA PRESENTE LICENCE OU DE LÕUTILISATION DE LÕOEUVRE, MEME SI LE DONNEUR
 # DE LICENCE A ETE INFORME DE LA POSSIBILITE DE TELS PREJUDICES.
 
+# Using this software for real financial operations can lead to some risks.
+# Indeed advantage of using a standalone reader is is to isolate your banking
+# card from big bad malwares.
+# Using it in a non-secured reader is taking risk that a keylogger intercepts
+# your PIN, a malware accesses to your card informations, or even intercepts
+# your transaction to modify it or operates its own transactions.
+
 # Limitation of Liability.
 #
 # IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
@@ -46,6 +53,23 @@ import argparse
 from EMVCAPfoo  import *
 from EMVCAPcore import *
 
+
+def AreYouSure():
+    print """
+***************************************************************************
+Using this software for real financial operations can lead to some risks.
+Indeed advantage of using a standalone reader is is to isolate your banking
+card from big bad malwares.
+Using it in a non-secured reader is taking risk that a keylogger intercepts
+your PIN, a malware accesses to your card informations, or even intercepts
+your transaction to modify it or operates its own transactions.
+***************************************************************************
+Are you sure you want to continue?
+"""
+    resp = raw_input('If so, type \'YES\', or anything else to quit:')
+    if resp != 'YES':
+        print 'Bye!'
+        sys.exit()
 
 def MyListReaders():
     print 'Available readers:'
@@ -314,6 +338,7 @@ if current_app is None or current_app['onVasco810?'] is False:
     sys.exit()
 if args.verbose:
     print 'Will use the following application: ' + current_app['name']
+AreYouSure()
 # Do a select again as we might have selected also other apps while scanning:
 CAPDU = '00A40400' + ("%02X" % (len(current_app['AID']) / 2)) +\
     current_app['AID']
