@@ -336,8 +336,15 @@ import getpass
 if current_app is None or current_app['onVasco810?'] is False:
     print 'No suitable app found, exiting'
     sys.exit()
-if args.verbose:
-    print 'Will use the following application: ' + current_app['name']
+app_is_cap_dpa = False
+if current_app['mode'] == 'CAP' or current_app['mode'] == 'DPA':
+    app_is_cap_dpa = True
+if app_is_cap_dpa is False:
+    print 'Could not find an EMV-CAP or Visa DPA application!'
+if args.verbose or app_is_cap_dpa is False:
+    print 'Will use the following application:',
+    print current_app['name'],
+    print '(type ' + current_app['mode'] + ')'
 AreYouSure()
 # Do a select again as we might have selected also other apps while scanning:
 CAPDU = '00A40400' + ("%02X" % (len(current_app['AID']) / 2)) +\
@@ -479,7 +486,7 @@ if args.mode == 1 and len(args.mdata) == 1:
     # TODO for ABN-AMRO NL there is apparently a scrambling of UN,
     # cf [schouwenaar] annex B
 
-cdol1_data = cdol_filling(tlv_cdol1, tlv_aid, transaction_value, \
+cdol1_data = cdol_filling(tlv_cdol1, current_app['mode'], transaction_value, \
     unpredictable_number, args.debug)
 if cdol1_data is None:
     sys.exit()
@@ -514,7 +521,7 @@ if args.verbose:
 # Generate Application Cryptogram AAC
 if args.verbose:
     print 'Generate Application Cryptogram AAC...'
-cdol2_data = cdol_filling(tlv_cdol2, tlv_aid, transaction_value, \
+cdol2_data = cdol_filling(tlv_cdol2, current_app['mode'], transaction_value, \
     unpredictable_number, args.debug)
 if cdol2_data is None:
     sys.exit()

@@ -30,25 +30,39 @@ ApplicationsList = [
     # From attempts by a Fortis Vasco810 when presenting e.g. an empty JCOP:
     {'name':'VisaRemAuthen',
      'description':'VisaRemAuthen = VISA DEP ~ CAP',
-     'AID':'A0000000038002',        'onVasco810?':True},
+     'AID':'A0000000038002',
+     'onVasco810?':True,
+     'mode':'DPA'},
     {'name':'SecureCode Aut',
      'description':'SecureCode Aut = MasterCard CAP',
-     'AID':'A0000000048002',        'onVasco810?':True},
+     'AID':'A0000000048002',
+     'onVasco810?':True,
+     'mode':'CAP'},
     {'name':'BANCONTACT',
      'description':'BANCONTACT',
-     'AID':'D056000666111010',      'onVasco810?':True},
+     'AID':'D056000666111010',
+     'onVasco810?':True,
+     'mode':'BANCONTACT'},
     {'name':'VISA electron',
      'description':'VISA Electron (Debit)',
-     'AID':'A0000000032010',        'onVasco810?':True},
+     'AID':'A0000000032010',
+     'onVasco810?':True,
+     'mode':'VISA'},
     {'name':'VISA credit',
      'description':'Standard VISA credit card',
-     'AID':'A0000000031010',        'onVasco810?':True},
+     'AID':'A0000000031010',
+     'onVasco810?':True,
+     'mode':'VISA'},
     {'name':'MasterCard credit',
      'description':'MasterCard credit (or debit?)',
-     'AID':'A0000000041010',        'onVasco810?':True},
+     'AID':'A0000000041010',
+     'onVasco810?':True,
+     'mode':'MC'},
     {'name':'MAESTRO',
      'description':'MAESTRO',
-     'AID':'A0000000043060',        'onVasco810?':True},
+     'AID':'A0000000043060',
+     'onVasco810?':True,
+     'mode':'MAESTRO'},
 
     # Other sources of AID:
     # http://globalblindspot.blogspot.com/2010/06/emvcap-application-ids.html
@@ -447,7 +461,7 @@ def pdol_filling(tlv_pdol, debug=False):
     return pdol_data
 
 
-def cdol_filling(tlv_cdol, tlv_aid, transaction_value=0,
+def cdol_filling(tlv_cdol, mode, transaction_value=0,
                  unpredictable_number=0, debug=False):
     # From book, ch 8.6.1.2
     # Most of them are null for EMV-CAP so we only check if
@@ -466,7 +480,7 @@ def cdol_filling(tlv_cdol, tlv_aid, transaction_value=0,
                 # Terminal verification results:
                 # offline data authentication was not performed
                 data = '80' + '00' * (t.L - 1)
-            elif t == 0x9A and tlv_aid.V[:10] == 'A000000003':  # Visa
+            elif t == 0x9A and (mode == 'DPA' or mode == 'VISA'):
                 data = '010101'
             elif t == 0x9F02 and transaction_value != 0:
                 data = '%%0%ii' % (t.L * 2) % transaction_value
