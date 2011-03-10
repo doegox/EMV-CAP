@@ -309,7 +309,7 @@ if args.listapps:
     sys.exit()
 
 import getpass
-if current_app is None:
+if current_app is None or current_app['onVasco810?'] is False:
     print 'No suitable app found, exiting'
     sys.exit()
 if args.verbose:
@@ -377,6 +377,7 @@ if 0x94 in rsp_msg_template2:
 
 # ----------------------------------------------------------------------------
 # Read files
+hex_ipb = False
 for f in files:
     # From book, ch 4.3.2.1
     sfi = f[0] >> 3
@@ -404,7 +405,10 @@ for f in files:
             tlv_cdol2 = aef_data_template.get(0x8D)
 if psn_to_be_used:
     assert hex_psn
-assert hex_ipb
+if hex_ipb is False:
+    # TODO: handle absence of IPB (Standard Visa, Bancontact,...)
+    print 'Sorry, at the moment we don\'t know how to handle absence of IPB'
+    sys.exit()
 assert tlv_cdol1
 assert tlv_cdol2
 
