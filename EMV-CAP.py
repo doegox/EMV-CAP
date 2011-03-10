@@ -71,6 +71,7 @@ Are you sure you want to continue?
         print 'Bye!'
         sys.exit()
 
+
 def MyListReaders():
     print 'Available readers:'
     try:
@@ -420,6 +421,9 @@ for f in files:
             print 'Read record %02X of SFI %02X...' % (record, sfi)
         CAPDU = '00B2%02X%02X00' % (p1, p2)
         (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+        # For simulation we skip some files
+        if len(RAPDU) == 0:
+            continue
         parsedRAPDU = TLVparser(RAPDU)
         if args.debug:
             print parsedRAPDU
@@ -437,6 +441,9 @@ for f in files:
             tlv_cdol2 = aef_data_template.get(0x8D)
 if psn_to_be_used:
     assert hex_psn
+if hex_ipb is False and current_app['mode'] == 'VISA':
+    print 'IPB not found, using default one for VISA'
+    hex_ipb = "0000FFFFFF0000000000000000000020B938"
 if hex_ipb is False:
     # TODO: handle absence of IPB (Standard Visa, Bancontact,...)
     print 'Sorry, at the moment we don\'t know how to handle absence of IPB'
