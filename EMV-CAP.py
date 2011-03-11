@@ -408,7 +408,7 @@ if 0x80 in parsedRAPDU:
     if args.verbose:
         print 'Warning: answer to Get Processing Options is not TLV,',
         print 'attempting to reconstruct it...'
-    parsedRAPDU = reconstruct_processingoptions(parsedRAPDU)
+    parsedRAPDU = reconstruct(parsedRAPDU, template_processingoptions)
     if args.debug:
         print parsedRAPDU
 assert 0x77 in parsedRAPDU
@@ -540,7 +540,7 @@ if 0x80 in parsedRAPDU:
     if args.verbose:
         print 'Warning: answer to GenerateAC is not TLV,',
         print 'attempting to reconstruct it...'
-    parsedRAPDU = reconstruct_generatearqc(parsedRAPDU)
+    parsedRAPDU = reconstruct(parsedRAPDU, template_generatearqc)
     if args.debug:
         print parsedRAPDU
 assert 0x77 in parsedRAPDU
@@ -575,7 +575,7 @@ if 0x80 in parsedRAPDU:
     if args.verbose:
         print 'Warning: answer to GenerateAC is not TLV,',
         print 'attempting to reconstruct it...'
-    parsedRAPDU = reconstruct_generatearqc(parsedRAPDU)
+    parsedRAPDU = reconstruct(parsedRAPDU, template_generatearqc)
     if args.debug:
         print parsedRAPDU
 

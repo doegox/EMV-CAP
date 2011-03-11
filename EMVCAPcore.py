@@ -261,34 +261,30 @@ def TLVparser(raw, hasdata=True):
     return resp
 
 
-def reconstruct_processingoptions(ct):
-    # We assume it's a (77){(82,2)(94,N*4)}
+def reconstruct(ct, template):
     assert 0x80 in ct
     data = ct[ct.index(0x80)].V
-    assert len(data) / 2 >= 6 and (((len(data) / 2) - 2) % 4) == 0
-    aip_data = hex2lint(data[:4])
-    tlv_aip = TLV(0x82, len(aip_data), aip_data)
-    afl_data = hex2lint(data[4:])
-    tlv_afl = TLV(0x94, len(afl_data), afl_data)
-    return [TLV(0x77, len(tlv_aip) + len(tlv_afl), [tlv_aip, tlv_afl])]
+    offset = 0
+    tlv77length = 0
+    tlv77data = []
+    for (tag, length) in template:
+        if length >= 0:
+            x = hex2lint(data[offset:offset + (2 * length)])
+            offset += 2 * length
+        else:
+            # Length -1 in our template means all remaining data
+            x = hex2lint(data[offset:])
+        tlv_x = TLV(tag, len(x), x)
+        tlv77data.append(tlv_x)
+        tlv77length += len(tlv_x)
+    return [TLV(0x77, tlv77length, tlv77data)]
 
 
-def reconstruct_generatearqc(ct):
-    # We assume it's a (77){(9f27,1)(9f36,2)(9f26,8)(9f10,>=7)}
-    assert 0x80 in ct
-    data = ct[ct.index(0x80)].V
-    assert len(data) / 2 >= 18
-    cid_data = hex2lint(data[:2])
-    tlv_cid = TLV(0x9F27, len(cid_data), cid_data)
-    atc_data = hex2lint(data[2:6])
-    tlv_atc = TLV(0x9F36, len(atc_data), atc_data)
-    ac_data = hex2lint(data[6:22])
-    tlv_ac = TLV(0x9F26, len(ac_data), ac_data)
-    iad_data = hex2lint(data[22:])
-    tlv_iad = TLV(0x9F10, len(iad_data), iad_data)
-    return [TLV(0x77,
-            len(tlv_cid) + len(tlv_atc) + len(tlv_ac) + len(tlv_iad),
-            [tlv_cid, tlv_atc, tlv_ac, tlv_iad])]
+template_processingoptions = \
+    [(0x82, 2), (0x94, -1)]
+
+template_generatearqc = \
+    [(0x9f27, 1), (0x9f36, 2), (0x9f26, 8), (0x9f10, -1)]
 
 # If more EMV tags are needed, some sources are:
 # * http://cheef.ru/docs/HowTo/TAG.info
