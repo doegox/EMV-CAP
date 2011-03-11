@@ -15,10 +15,14 @@ def MyConnectFoo(reader_match, debug=False):
     class ConnectFooClass():
         # Example of a Belgian debit card
         # using Belgian Vasco810 (pin=1234)
+        # Application: A0000000048002 SecureCode Aut
         # M1 challenge=nothing, OTP=23790240
         # ./EMV-CAP.py -m1 -r foo:debit
         # M1 challenge=1234, OTP=23580039
         # ./EMV-CAP.py -m1 -r foo:debit 1234
+        # !! don't modify keyword of this trace "debit"
+        # as it's a reference in the published article
+        # Note that "cap_be" is defined below as alias for "debit"
         msgs_debit = {
           'atr':
               '3B67000000000000009000',
@@ -57,11 +61,13 @@ def MyConnectFoo(reader_match, debug=False):
               '77269F2701009F360200599F26086AC5D81B1BDE0C9A9F100F0601560325' +\
               'A00007010300000100029000',
         }
+        msgs_cap_be = msgs_debit
         # Example of a Belgian VISA
         # using Belgian Vasco810 (pin=1234)
+        # Application: A0000000038002 VisaRemAuthen
         # M1 challenge=nothing, OTP=19814125
-        # ./EMV-CAP.py -m1 -r foo:visa_be
-        msgs_visa_be = {
+        # ./EMV-CAP.py -m1 -r foo:visa_dpa_be
+        msgs_visa_dpa_be = {
           'atr':
               '3B67000000000000009000',
           '00A4040007A0000000038002':
@@ -92,9 +98,10 @@ def MyConnectFoo(reader_match, debug=False):
         }
         # Example of a French VISA
         # using Belgian Vasco810 (pin=1234)
+        # Application: A0000000038002 VisaRemAuthen
         # M1 challenge=nothing, OTP=34656023
-        # ./EMV-CAP.py -m1 -r foo:visa_fr
-        msgs_visa_fr = {
+        # ./EMV-CAP.py -m1 -r foo:visa_dpa_fr
+        msgs_visa_dpa_fr = {
           'atr':
               '3B65000065046C9000',
           '00A4040007A0000000038002':
@@ -120,11 +127,12 @@ def MyConnectFoo(reader_match, debug=False):
               '771E9F2701009F360200109F260814C3CC3C78CA84ED9F100706780A0325' +\
               '80009000',
         }
-        # Example of a VISA without DPA
+        # Example of a French VISA without DPA
         # using Belgian Vasco810 (pin=1234)
+        # Application: A0000000031010 Visa Credit
         # M1 challenge=nothing, OTP=102823328
-        # ./EMV-CAP.py -m1 -r foo:visa_cleo
-        msgs_visa_cleo = {
+        # ./EMV-CAP.py -m1 -r foo:visa_cleo_fr
+        msgs_visa_cleo_fr = {
           'atr':
               '3B6500002063CB6A00',
           '00A4040007A0000000031010':
@@ -153,8 +161,8 @@ def MyConnectFoo(reader_match, debug=False):
         }
         # From http://crypto.hyperlink.cz/files/emv_side_channels_v1.pdf
         # NOT WORKING as we don't know IPB neither obtained OTP
-        # ./EMV-CAP.py -m1 -r foo:rosa -v -d
-        msgs_rosa = {
+        # ./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d
+        msgs_visa_rosa_sk = {
           'atr':
               '3BE900008121455649535F494E46200678',
           '00A4040007A0000000032010':
@@ -168,20 +176,10 @@ def MyConnectFoo(reader_match, debug=False):
               '02069F03069F1A0295055F2A029A039C019F37049000',
           '00B2020C00':
               '70049F5601009000',  # fake answer with IPB = 00
-          '00B2030C00':
-              '70009000',  # fake answer
-          '00B2040C00':
-              '70009000',  # fake answer
-          '00B2050C00':
-              '70009000',  # fake answer
-          '00B2011400':
-              '70009000',  # fake answer
-          '00B2021400':
-              '70009000',  # fake answer
           '80CA9F1700':
               '9F1701039000',  # fake answer
           '0020008008241234FFFFFFFFFF':
-              '9000',  # fake answer
+              '9000',
           '80AE80001D000000000000000000000000000080000000000000010101000000' +\
           '0000':
               '801D80000A7BE8144022536A2206330A03A0B8000A020000000000F5A6E0' +\
@@ -193,9 +191,10 @@ def MyConnectFoo(reader_match, debug=False):
         # From http://www.ru.nl/publish/pages/578936\
         #          /emv-cards_and_internet_banking_-_michael_schouwenaar.pdf
         # using ABN-AMRO e-dentifier2 device (pin=1234)
+        # Application: A0000000048002 SecureCode Aut
         # M1 challenge=24661140, OTP=34998891
-        # ./EMV-CAP.py -m1 24661140 -r foo:abnamro
-        msgs_abnamro = {
+        # ./EMV-CAP.py -m1 24661140 -r foo:cap_abnamro_nl
+        msgs_cap_abnamro_nl = {
           'atr':
               '3B',  # unknown
           '00A4040007A0000000048002':
@@ -234,9 +233,10 @@ def MyConnectFoo(reader_match, debug=False):
         }
         # From http://www.cl.cam.ac.uk/~sjm217/papers/fc09optimised.pdf
         # using NatWest card, NatWest reader?
+        # Application: A0000000048002 SecureCode Aut
         # M1 challenge=12345678, OTP=4822527
-        # ./EMV-CAP.py -m1 12345678 -r foo:fc09
-        msgs_fc09 = {
+        # ./EMV-CAP.py -m1 12345678 -r foo:cap_fc09_uk
+        msgs_cap_fc09_uk = {
           'atr':
               '3B',  # unknown
           '00A4040007A0000000048002':
@@ -260,8 +260,9 @@ def MyConnectFoo(reader_match, debug=False):
         }
         # From http://www.cl.cam.ac.uk/research/security/banking/nopin\
         #          /oakland10chipbroken.pdf
-        # ./EMV-CAP.py -L -r foo:pse
-        msgs_pse = {
+        # Application discovery with 1PAY.SYS.DDF01
+        # ./EMV-CAP.py -L -r foo:pse_uk
+        msgs_pse_uk = {
           'atr':
               '3B',  # unknown
           '00A404000E315041592E5359532E4444463031':
