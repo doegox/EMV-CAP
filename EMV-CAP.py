@@ -469,7 +469,8 @@ if hex_ipb is False:
         print 'Using default Belgian IPB function'
         hex_ipb = "IPB_BE"
     else:
-        print 'Sorry, at the moment we don\'t know how to handle absence of IPB'
+        print 'Sorry, at the moment we don\'t know how to handle',
+        print 'absence of IPB'
         sys.exit()
 assert tlv_cdol1
 assert tlv_cdol2
