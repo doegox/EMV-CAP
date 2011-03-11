@@ -474,27 +474,50 @@ def cdol_filling(tlv_cdol, mode, transaction_value=0,
             data = '00' * t.L
             if t == 0x8A:
                 # Authorization Response Code:
-                # Z3: Unable to go online (offline declined)
-                data = '5A33'
+                if mode == 'MAESTRO':
+                    # Z1: Offline declined
+                    data = 'Z1'.encode('hex')
+                else:
+                    # Z3: Unable to go online (offline declined)
+                    data = 'Z3'.encode('hex')
             if t == 0x95:
                 # Terminal verification results:
-                # offline data authentication was not performed
-                data = '80' + '00' * (t.L - 1)
+                if mode == 'MAESTRO':
+                    # Offline data authentication was not performed
+                    # Merchand forced transaction online
+                    data = '8000000800'
+                else:
+                    # Offline data authentication was not performed
+                    data = '8000000000'
             elif t == 0x9A and (mode == 'DPA' or mode == 'VISA'):
                 data = '010101'
             elif t == 0x9F02 and transaction_value != 0:
                 data = '%%0%ii' % (t.L * 2) % transaction_value
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
+                if mode == 'MAESTRO':
+                  # 00 = Fail CVM Processing
+                  #      - Fail cardholder verification if CVM is unsucces...
+                  # 00 = Always                                                                   |
+                  # 00 = Unknown (for example, for signature)
+                    data = '000000'
+                else:
                   # 01 = ICC Plain PIN verification
                   #      - Fail cardholder verification if...
                   # 00 = Always
                   # 02 = Successful (e.g. for offline PIN)
-                data = '010002'
+                    data = '010002'
             elif t == 0x9F35:
                 # terminal type
                 # in [schouwenaar] it's in cdol rather than pdol
-                data = '34'
+                if mode == 'MAESTRO':
+                  # 3  = operated by cardholder                                                    |
+                  # 7  = ??
+                    data = '37'
+                else:
+                  # 3  = operated by cardholder                                                    |
+                  # 4  = Unattended, online only
+                    data = '34'
             elif t == 0x9F37 and unpredictable_number != 0:
                 data = '%%0%ii' % (t.L * 2) % unpredictable_number
             assert len(data) / 2 == t.L
