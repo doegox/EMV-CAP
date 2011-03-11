@@ -153,14 +153,11 @@ class TLV():
             self.hex_T = "%02X" % T
         self.tclass = T1 >> 6
         self.type = (T1 & 0x20) >> 5
-        self.known_in_cdol = False
-        self.known_in_pdol = False
+        self.known_in_dol = False
         if T in TLVdict:
             self.name = TLVdict[T]['name']
-            if 'known_in_pdol' in TLVdict[T]:
-                self.known_in_pdol = TLVdict[T]['known_in_pdol']
-            if 'known_in_cdol' in TLVdict[T]:
-                self.known_in_cdol = TLVdict[T]['known_in_cdol']
+            if 'known_in_dol' in TLVdict[T]:
+                self.known_in_dol = TLVdict[T]['known_in_dol']
         else:
             self.name = 'Unknown tag %0X' % T
         if V is None:
@@ -317,8 +314,7 @@ TLVdict = {
     0x5F28: {'name': 'issuer country code', },
     0x5F30: {'name': 'Service Code', },
     0x5F2A: {'name': 'Transaction Currency Code',
-             'known_in_cdol': True,
-             'known_in_pdol': True},
+             'known_in_dol': True},
     0x5F2C: {'name': 'Cardholder nationality', },
     0x5F2D: {'name': 'language preference',
              'parse': lint2ascii},
@@ -338,7 +334,7 @@ TLVdict = {
     0x87:   {'name': 'Application Priority Indicator', },
     0x88:   {'name': 'Short File Identifier (SFI)', },
     0x8A:   {'name': 'Authorization Response Code',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x8C:   {'name': 'card risk management dol 1 (cdol1)',
              'onlyTL': True, },
     0x8D:   {'name': 'card risk management dol 2 (cdol2)',
@@ -347,20 +343,20 @@ TLVdict = {
     0x8F:   {'name': 'Certification Authority Public Key Index', },
     0x90:   {'name': 'Issuer Public Key Certificate', },
     0x91:   {'name': 'issuer authentication data',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x92:   {'name': 'Issuer Public Key Remainder', },
     0x93:   {'name': 'Signed Static Application Data', },
     0x94:   {'name': 'application file locator', },
     0x95:   {'name': 'Terminal Verification Results',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9A:   {'name': 'Transaction Date',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9C:   {'name': 'Transaction Type',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F02: {'name': 'Authorized Amount (AA)',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F03: {'name': 'Other Amount',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F07: {'name': 'AUC - Application Usage Control', },
     0x9F08: {'name': 'Application Version Number', },
     0x9F0D: {'name': 'IAC - Default', },
@@ -375,7 +371,7 @@ TLVdict = {
              'parse':
                  lambda x: x[0]},
     0x9F1A: {'name': 'Terminal Country Code',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F1F: {'name': 'Track 1 Discretionary Data',
              'parse': lint2ascii},
     0x9F23: {'name': 'Upper Consecutive Offline Limit', },
@@ -383,13 +379,13 @@ TLVdict = {
     0x9F27: {'name': 'cryptogram information data', },
     0x9F32: {'name': 'Issuer Public Key Exponent', },
     0x9F34: {'name': 'cardholder verification method (cvm) results',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F35: {'name': 'terminal type',
-             'known_in_cdol': True,
-             'known_in_pdol': True},
+             'known_in_dol': True,
+             'known_in_dol': True},
     0x9F36: {'name': 'Application Transaction counter (ATC)', },
     0x9F37: {'name': 'Unpredictable Number (UN)',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F38: {'name': 'processing options dol (pdol)',
              'onlyTL': True, },
     0x9F40: {'name': 'Additional Terminal Capabilities',
@@ -404,7 +400,7 @@ TLVdict = {
              'parse':
                  lambda x: ("%i (0." % x[0]) + ("0" * x[0]) + ")"},
     0x9F45: {'name': 'Data Authentication Code',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F46: {'name': 'ICC Public Key Certificate', },
     0x9F47: {'name': 'ICC Public Key Exponent', },
     0x9F48: {'name': 'ICC Public Key Remainder', },
@@ -412,7 +408,7 @@ TLVdict = {
              'onlyTL': True, },
     0x9F4A: {'name': 'SDA Tag List', },
     0x9F4C: {'name': 'ICC dynamic number',
-             'known_in_cdol': True},
+             'known_in_dol': True},
     0x9F4D: {'name': 'Log entry', },
     0x9F55: {'name': 'Issuer Authentication Flag', },
     0x9F56: {'name': 'Issuer Proprietary Bitmap (IPB)', },
@@ -420,57 +416,21 @@ TLVdict = {
     0xBF0C: {'name': 'fci issuer discretionary data', },
     0xDF07: {'name': 'unknown tag DF07 (Banksys ID??)',
              'parse': lint2ascii},
+    0xDF40: {'name': 'unknown tag DF40',
+             'known_in_dol': True},
 }
 
-# TODO: should we unify pdol & cdol filling??
 
-
-def pdol_filling(tlv_pdol, debug=False):
-    pdol_data = ''
-    if tlv_pdol is None:
-        return pdol_data
-    for t in tlv_pdol.V:
-        if t.known_in_pdol:
-            if t == 0x9F35:
-                # From book, ch 8.6.1.2, Terminal Type = 34
-                # (Annex A1 of Book 4 in the EMV 2000 specifications)
-                data = '34'
-            if t == 0x5F2A:
-                # transaction currency code
-                # cf http://www.iso.org/iso/fr/support/faqs\
-                #        /faqs_widely_used_standards\
-                #        /widely_used_standards_other\
-                #        /currency_codes/currency_codes_list-1.htm
-                # data = '0978' # Euro
-                data = '0000'
-            # Some other possible pdol contents?:
-            # Terminal Type (tag 9F35)
-            # Terminal Capabilities (9F33)
-            # Terminal Country Code (9F1A)
-            # Merchant Category Code (9F15)
-            # Authorized Amount (tag 81)
-            assert len(data) / 2 == t.L
-            pdol_data += data
-            if debug:
-                print 'Will use %s for tag %s' % (data, t.hex_T)
-        else:
-            print 'Error I dont know how to handle tag %s in pdol' % t.hex_T
-            print 'If you want to fill it, add a known_in_pdol flag',
-            print 'in TLVdict for that tag & value in pdol_filling()'
-            return None
-    return pdol_data
-
-
-def cdol_filling(tlv_cdol, mode, transaction_value=0,
+def dol_filling(tlv_dol, mode, transaction_value=0,
                  unpredictable_number=0, debug=False):
     # From book, ch 8.6.1.2
     # Most of them are null for EMV-CAP so we only check if
     # there are not some unknown stuff in the template
-    cdol_data = ''
-    if tlv_cdol is None:
-        return cdol_data
-    for t in tlv_cdol.V:
-        if t.known_in_cdol:
+    dol_data = ''
+    if tlv_dol is None:
+        return dol_data
+    for t in tlv_dol.V:
+        if t.known_in_dol:
             data = '00' * t.L
             if t == 0x8A:
                 # Authorization Response Code:
@@ -480,7 +440,7 @@ def cdol_filling(tlv_cdol, mode, transaction_value=0,
                 else:
                     # Z3: Unable to go online (offline declined)
                     data = 'Z3'.encode('hex')
-            if t == 0x95:
+            elif t == 0x95:
                 # Terminal verification results:
                 if mode == 'MAESTRO':
                     # Offline data authentication was not performed
@@ -521,15 +481,15 @@ def cdol_filling(tlv_cdol, mode, transaction_value=0,
             elif t == 0x9F37 and unpredictable_number != 0:
                 data = '%%0%ii' % (t.L * 2) % unpredictable_number
             assert len(data) / 2 == t.L
-            cdol_data += data
+            dol_data += data
             if debug:
                 print 'Will use %s for tag %s' % (data, t.hex_T)
         else:
-            print 'Error I dont know how to handle tag %s in cdol' % t.hex_T
+            print 'Error I dont know how to handle tag %s in dol' % t.hex_T
             print 'If you want to fill it with null value,',
-            print 'add a known_in_cdol flag in TLVdict for that tag'
+            print 'add a known_in_dol flag in TLVdict for that tag'
             return None
-    return cdol_data
+    return dol_data
 
 
 def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):

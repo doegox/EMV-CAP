@@ -390,7 +390,7 @@ if 0xA5 in fci_template:
 if args.verbose:
     print 'Get Processing Options...'
 # From book, ch 6.2.1
-pdol_data = pdol_filling(tlv_pdol, args.debug)
+pdol_data = dol_filling(tlv_pdol, current_app['mode'], debug=args.debug)
 if pdol_data is None:
     sys.exit()
 CAPDU = '80A80000%02X83%02X%s' % \
@@ -523,8 +523,8 @@ if args.mode == 1 and len(args.mdata) == 1:
     # TODO for ABN-AMRO NL there is apparently a scrambling of UN,
     # cf [schouwenaar] annex B
 
-cdol1_data = cdol_filling(tlv_cdol1, current_app['mode'], transaction_value, \
-    unpredictable_number, args.debug)
+cdol1_data = dol_filling(tlv_cdol1, current_app['mode'], transaction_value, \
+    unpredictable_number, debug=args.debug)
 if cdol1_data is None:
     sys.exit()
 CAPDU = '80AE8000%02X%s' % (len(cdol1_data) / 2, cdol1_data)
@@ -558,8 +558,8 @@ if args.verbose:
 # Generate Application Cryptogram AAC
 if args.verbose:
     print 'Generate Application Cryptogram AAC...'
-cdol2_data = cdol_filling(tlv_cdol2, current_app['mode'], transaction_value, \
-    unpredictable_number, args.debug)
+cdol2_data = dol_filling(tlv_cdol2, current_app['mode'], transaction_value, \
+    unpredictable_number, debug=args.debug)
 if cdol2_data is None:
     sys.exit()
 CAPDU = '80AE0000%02X%s' % (len(cdol2_data) / 2, cdol2_data)
