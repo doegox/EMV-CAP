@@ -42,3 +42,7 @@ echo Test10
 echo Test11
 ./EMV-CAP.py -m1 -r foo:bancontact_be |\
   grep ': 36251248$' || echo FAIL
+
+echo Test12
+./EMV-CAP.py -m1 -r foo:eid_pt |\
+  grep ': 8669448$' || echo FAIL
