@@ -358,6 +358,8 @@ assert 0x84 in fci_template
 tlv_aid = fci_template.get(0x84)
 tlv_pdol = None
 psn_to_be_used = False
+cardholder_nationality = False
+df07 = False
 if 0xA5 in fci_template:
     fci_proprietary_template = fci_template.get(0xA5)
     if 0x9F38 in fci_proprietary_template:
@@ -373,6 +375,12 @@ if 0xA5 in fci_template:
                 print 'Warning: card tells to use PSN but this was never',
                 print 'tested, please report success/failure to developers,',
                 print 'thanks!'
+        if 0x5F2C in fci_issuer_discretionary_data:
+            cardholder_nationality = \
+                fci_issuer_discretionary_data.get(0x5F2C)
+        if 0xDF07 in fci_issuer_discretionary_data:
+            df07 = \
+                fci_issuer_discretionary_data.get(0xDF07)
 
 # ----------------------------------------------------------------------------
 # Initiate transaction / Get Processing Options:
@@ -441,13 +449,28 @@ for f in files:
             tlv_cdol2 = aef_data_template.get(0x8D)
 if psn_to_be_used:
     assert hex_psn
-if hex_ipb is False and current_app['mode'] == 'VISA':
-    print 'IPB not found, using default one for VISA'
-    hex_ipb = "0000FFFFFF0000000000000000000020B938"
 if hex_ipb is False:
-    # TODO: handle absence of IPB (Standard Visa, Bancontact,...)
-    print 'Sorry, at the moment we don\'t know how to handle absence of IPB'
-    sys.exit()
+    print 'IPB not found'
+    if current_app['mode'] == 'VISA':
+        if isinstance(cardholder_nationality, TLV) and \
+           cardholder_nationality.V == "0056" and \
+           isinstance(df07, TLV) and \
+           df07.V.decode('hex')[:6] == "BKS056":
+            print 'Using default Belgian IPB function'
+            hex_ipb = "IPB_BE"
+        else:
+            print 'Using default VISA IPB'
+            hex_ipb = "0000FFFFFF0000000000000000000020B938"
+    elif current_app['mode'] == 'BANCONTACT':
+        print 'Using default Belgian IPB function'
+        hex_ipb = "IPB_BE"
+    elif current_app['mode'] == 'MAESTRO':
+        # TODO all MAESTRO use this filter or only BE??
+        print 'Using default Belgian IPB function'
+        hex_ipb = "IPB_BE"
+    else:
+        print 'Sorry, at the moment we don\'t know how to handle absence of IPB'
+        sys.exit()
 assert tlv_cdol1
 assert tlv_cdol2
 
@@ -560,7 +583,9 @@ if args.mode == 2 and len(args.mdata) > 0:
 # Display OTP
 if args.verbose:
     print 'Computing OTP...'
-if psn_to_be_used:
+if hex_ipb == "IPB_BE":
+    otp = generate_otp_be(hex_atc, hex_ac, debug=args.debug)
+elif psn_to_be_used:
     otp = generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, \
         hex_psn, debug=args.debug)
 else:

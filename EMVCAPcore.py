@@ -545,6 +545,19 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
     return otp
 
 
+def generate_otp_be(atc, ac, debug=False):
+    # Expecting arguments as hex strings
+    #  AC_byte2 & 0x3 | AC_byte1 | ATC_byte0 | AC_byte0
+    #  +report of unit to the left
+    #  +truncation 8 digits
+    otp = (int(ac[-6:-2], 16) & 0x3FF) << 16
+    otp += int(atc[-2:], 16) << 8
+    otp += int(ac[-2:], 16)
+    otp += (otp % 10) * 10000000
+    otp %= 100000000
+    return otp
+
+
 def mix_tds(ac, mdata, debug=False):
     des = DES.new(key=ac.decode('hex'), mode=DES.MODE_CBC)
     data = 'F'.join([str(i) for i in mdata])
