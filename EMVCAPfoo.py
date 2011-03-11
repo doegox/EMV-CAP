@@ -13,8 +13,9 @@ from EMVCAPcore import hex2lint
 
 def MyConnectFoo(reader_match, debug=False):
     class ConnectFooClass():
+        foo = True
         # Example of a Belgian debit card
-        # using Belgian Vasco810 (pin=1234)
+        # using Belgian Vasco810
         # Application: A0000000048002 SecureCode Aut
         # M1 challenge=nothing, OTP=23790240
         # ./EMV-CAP.py -m1 -r foo:debit
@@ -40,10 +41,6 @@ def MyConnectFoo(reader_match, debug=False):
               '9F02069F03069F1A0295055F2A029A039C019F37049F4C029F34038D1F8A' +\
               '029F02069F03069F1A0295055F2A029A039C019F37049F4C029F3403910A' +\
               '9000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE800022000000000000000000000000000080000000000000000000000000' +\
           '00000000010002':
               '77269F2701809F3602005A9F2608513C1201B7DB02A09F100F06015603A4' +\
@@ -63,7 +60,7 @@ def MyConnectFoo(reader_match, debug=False):
         }
         msgs_cap_be = msgs_debit
         # Example of a Belgian debit card
-        # using Belgian Vasco810 (pin=1234)
+        # using Belgian Vasco810
         # forcing application...
         # Application: A0000000043060 MAESTRO
         # M1 challenge=nothing, OTP=01179700
@@ -86,10 +83,6 @@ def MyConnectFoo(reader_match, debug=False):
               '1B9F02069F03069F1A0295055F2A029A039C019F37049F35019F34038D1C' +\
               '8A029F02069F03069F1A0295055F2A029A039C019F37049F340391089F4A' +\
               '01829000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE800021000000000000000000000000000080000008000000000000000000' +\
           '000037000000':
               '77369F2701809F360200009F260800000000000012349F101F0E015803A4' +\
@@ -100,7 +93,7 @@ def MyConnectFoo(reader_match, debug=False):
               '9C4000000000000000FF0F000120000CD30000000000000000009000',
         }
         # Example of a Belgian VISA
-        # using Belgian Vasco810 (pin=1234)
+        # using Belgian Vasco810
         # Application: A0000000038002 VisaRemAuthen
         # M1 challenge=nothing, OTP=19814125
         # ./EMV-CAP.py -m1 -r foo:visa_dpa_be
@@ -120,10 +113,6 @@ def MyConnectFoo(reader_match, debug=False):
               '9F02069F03069F1A0295055F2A029A039C019F37049F4C029F34038D1F8A' +\
               '029F02069F03069F1A0295055F2A029A039C019F37049F4C029F3403910A' +\
               '9000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE800022000000000000000000000000000080000000000000010101000000' +\
           '00000000010002':
               '77269F2701809F3602004B9F2608499FC380743A56ED9F100F06025703A4' +\
@@ -134,7 +123,7 @@ def MyConnectFoo(reader_match, debug=False):
               '200007010300000100029000',
         }
         # Example of a French VISA
-        # using Belgian Vasco810 (pin=1234)
+        # using Belgian Vasco810
         # Application: A0000000038002 VisaRemAuthen
         # M1 challenge=nothing, OTP=34656023
         # ./EMV-CAP.py -m1 -r foo:visa_dpa_fr
@@ -151,10 +140,6 @@ def MyConnectFoo(reader_match, debug=False):
               '02069F03069F1A0295055F2A029A039C019F37045A084533112233445566' +\
               '5F3401008E0A000000000000000001009F56118001FFFFFF000000000000' +\
               '0000000000009F5501009000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE80001D000000000000000000000000000080000000000000010101000000' +\
           '0000':
               '771E9F2701809F360200109F2608CF17CD2F3F3690449F100706780A03A4' +\
@@ -165,7 +150,7 @@ def MyConnectFoo(reader_match, debug=False):
               '80009000',
         }
         # Example of a French VISA without DPA
-        # using Belgian Vasco810 (pin=1234)
+        # using Belgian Vasco810
         # Application: A0000000031010 Visa Credit
         # M1 challenge=nothing, OTP=102823328
         # ./EMV-CAP.py -m1 -r foo:visa_cleo_fr
@@ -183,10 +168,6 @@ def MyConnectFoo(reader_match, debug=False):
               '70425F280202508C1B9F02069F03069F1A0295055F2A029A039C019F3704' +\
               '9F45029F4C088D1A8A029F02069F03069F1A0295055F2A029A039C019F37' +\
               '049F4C089F4A01829000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE800027000000000000000000000000000080000000000000010101000000' +\
           '000000000000000000000000':
               '77219F2701809F360200039F2608107A6B38B2EDBE309F100A06550A03A4' +\
@@ -213,10 +194,6 @@ def MyConnectFoo(reader_match, debug=False):
               '02069F03069F1A0295055F2A029A039C019F37049000',
           '00B2020C00':
               '70049F5601009000',  # fake answer with IPB = 00
-          '80CA9F1700':
-              '9F1701039000',  # fake answer
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE80001D000000000000000000000000000080000000000000010101000000' +\
           '0000':
               '801D80000A7BE8144022536A2206330A03A0B8000A020000000000F5A6E0' +\
@@ -227,7 +204,7 @@ def MyConnectFoo(reader_match, debug=False):
         }
         # From http://www.ru.nl/publish/pages/578936\
         #          /emv-cards_and_internet_banking_-_michael_schouwenaar.pdf
-        # using ABN-AMRO e-dentifier2 device (pin=1234)
+        # using ABN-AMRO e-dentifier2 device
         # Application: A0000000048002 SecureCode Aut
         # M1 challenge=24661140, OTP=34998891
         # ./EMV-CAP.py -m1 24661140 -r foo:cap_abnamro_nl
@@ -244,10 +221,6 @@ def MyConnectFoo(reader_match, debug=False):
               '029F4C089F34038D0C910A8A0295059F37049F4C085A0A12345678901234' +\
               '5678905F3401018E0A000000000000000001009F5501809F560C00007FFF' +\
               'FFE00000000000009000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE80002B000000000000000000000000000080000000000000000000002466' +\
           '11403400000000000000000000010002':
               '77299F2701809F360200429F2608C14D71DBAFA79FED9F10120012A50003' +\
@@ -284,10 +257,6 @@ def MyConnectFoo(reader_match, debug=False):
               '70558E0A000000000000000001009F5501A09F561200001F00000000000F' +\
               'FFFF000000000080008C159F02069F03069F1A0295055F2A029A039C019F' +\
               '37048D178A029F02069F03069F1A0295055F2A029A039C019F37049000',
-          '80CA9F1700':
-              '9F1701039000',
-          '0020008008241234FFFFFFFFFF':
-              '9000',
           '80AE80001D000000000000000000000000000080000000000000000000001234' +\
           '5678':
               '8012800042B7F9A572DA74CAFF06770A03A480009000',
