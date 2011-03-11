@@ -434,15 +434,15 @@ def dol_filling(tlv_dol, mode, transaction_value=0,
             data = '00' * t.L
             if t == 0x8A:
                 # Authorization Response Code:
-                if mode == 'MAESTRO':
+                if mode == 'MAESTRO' or mode == 'BANCONTACT':
                     # Z1: Offline declined
-                    data = 'Z1'.encode('hex')
+                    data = 'Z1'.encode('hex').upper()
                 else:
                     # Z3: Unable to go online (offline declined)
-                    data = 'Z3'.encode('hex')
+                    data = 'Z3'.encode('hex').upper()
             elif t == 0x95:
                 # Terminal verification results:
-                if mode == 'MAESTRO':
+                if mode == 'MAESTRO' or mode == 'BANCONTACT':
                     # Offline data authentication was not performed
                     # Merchand forced transaction online
                     data = '8000000800'
@@ -455,10 +455,10 @@ def dol_filling(tlv_dol, mode, transaction_value=0,
                 data = '%%0%ii' % (t.L * 2) % transaction_value
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
-                if mode == 'MAESTRO':
+                if mode == 'MAESTRO' or mode == 'BANCONTACT':
                   # 00 = Fail CVM Processing
                   #      - Fail cardholder verification if CVM is unsucces...
-                  # 00 = Always                                                                   |
+                  # 00 = Always
                   # 00 = Unknown (for example, for signature)
                     data = '000000'
                 else:
@@ -470,12 +470,12 @@ def dol_filling(tlv_dol, mode, transaction_value=0,
             elif t == 0x9F35:
                 # terminal type
                 # in [schouwenaar] it's in cdol rather than pdol
-                if mode == 'MAESTRO':
-                  # 3  = operated by cardholder                                                    |
+                if mode == 'MAESTRO' or mode == 'BANCONTACT':
+                  # 3  = operated by cardholder
                   # 7  = ??
                     data = '37'
                 else:
-                  # 3  = operated by cardholder                                                    |
+                  # 3  = operated by cardholder
                   # 4  = Unattended, online only
                     data = '34'
             elif t == 0x9F37 and unpredictable_number != 0:

@@ -464,17 +464,20 @@ if hex_ipb is False:
         else:
             print 'Using default VISA IPB'
             hex_ipb = "0000FFFFFF0000000000000000000020B938"
-    elif current_app['mode'] == 'BANCONTACT':
-        print 'Using default Belgian IPB function'
-        hex_ipb = "IPB_BE"
     elif current_app['mode'] == 'MAESTRO':
         # TODO all MAESTRO use this filter or only BE??
+        print 'Using default Belgian IPB function'
+        hex_ipb = "IPB_BE"
+    elif current_app['mode'] == 'BANCONTACT':
         print 'Using default Belgian IPB function'
         hex_ipb = "IPB_BE"
     else:
         print 'Sorry, at the moment we don\'t know how to handle',
         print 'absence of IPB'
         sys.exit()
+elif current_app['mode'] == 'BANCONTACT':
+    print 'Forcing default Belgian IPB function even if IPB found!'
+    hex_ipb = "IPB_BE"
 assert tlv_cdol1
 assert tlv_cdol2
 
