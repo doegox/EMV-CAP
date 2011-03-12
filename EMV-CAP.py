@@ -346,9 +346,7 @@ if args.verbose or app_is_cap_dpa is False:
     print 'Will use the following application:',
     print current_app['name'],
     print '(type ' + current_app['mode'] + ')'
-if hasattr(connection, 'foo'):
-    print 'Simulation mode'
-else:
+if not hasattr(connection, 'foo'):
     AreYouSure()
 # Do a select again as we might have selected also other apps while scanning:
 CAPDU = '00A40400' + ("%02X" % (len(current_app['AID']) / 2)) +\
@@ -481,36 +479,37 @@ elif current_app['mode'] == 'BANCONTACT':
 assert tlv_cdol1
 assert tlv_cdol2
 
-if hasattr(connection, 'foo'):
-    print 'PIN verification skipped in this mode'
-else:
-    # ------------------------------------------------------------------------
-    # Get PIN Try Counter
-    # From book, ch 6.6.4
-    CAPDU = '80CA9F1700'
-    (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
-    parsedRAPDU = TLVparser(RAPDU)
-    if args.debug:
-        print parsedRAPDU
-    assert 0x9F17 in parsedRAPDU
-    ntry = int(parsedRAPDU[parsedRAPDU.index(0x9F17)].V, 16)
-    if ntry < 3 or args.verbose:
-        print 'Still %i PIN tries available!' % ntry
+# ------------------------------------------------------------------------
+# Get PIN Try Counter
+# From book, ch 6.6.4
+CAPDU = '80CA9F1700'
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+parsedRAPDU = TLVparser(RAPDU)
+if args.debug:
+    print parsedRAPDU
+assert 0x9F17 in parsedRAPDU
+ntry = int(parsedRAPDU[parsedRAPDU.index(0x9F17)].V, 16)
+if ntry < 3 or args.verbose:
+    print 'Still %i PIN tries available!' % ntry
 
-    # ------------------------------------------------------------------------
-    # Verify PIN
-    # From book, ch 6.6.4
+# ------------------------------------------------------------------------
+# Verify PIN
+# From book, ch 6.6.4
+if hasattr(connection, 'foo'):
+    print 'Simulation mode, PIN entry skipped'
+    pin = '1234'
+else:
     pin = getpass.getpass('Enter PIN (enter to abort)  :')
-    while len(pin) < 4 or len(pin) > 12 or not pin.isdigit():
-        if len(pin) == 0:
-            sys.exit()
-        pin = getpass.getpass('Error! I expect a proper PIN: ')
-    CAPDU = '00200080082%i' % len(pin) + pin + 'F' * (14 - len(pin))
-    (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
-    if sw1 != 0x90 or sw2 != 00:
-        print 'Error wrong PIN!!!'
+while len(pin) < 4 or len(pin) > 12 or not pin.isdigit():
+    if len(pin) == 0:
         sys.exit()
-    del(pin)
+    pin = getpass.getpass('Error! I expect a proper PIN: ')
+CAPDU = '00200080082%i' % len(pin) + pin + 'F' * (14 - len(pin))
+(RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
+if sw1 != 0x90 or sw2 != 00:
+    print 'Error wrong PIN!!!'
+    sys.exit()
+del(pin)
 
 # ----------------------------------------------------------------------------
 # Generate Application Cryptogram ARQC
