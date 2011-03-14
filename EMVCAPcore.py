@@ -363,6 +363,8 @@ TLVdict = {
     0x9F12: {'name': 'Application Preferred Name',
              'parse': lint2ascii},
     0x9F14: {'name': 'Lower Consecutive Offline Limit', },
+    0x9F15: {'name': 'Merchant Category Code',
+             'known_in_dol': True},
     0x9F17: {'name': 'PIN Retry Counter',
              'parse':
                  lambda x: x[0]},
@@ -417,7 +419,7 @@ TLVdict = {
 }
 
 
-def dol_filling(tlv_dol, mode, transaction_value=0,
+def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
                  unpredictable_number=0, debug=False):
     # From book, ch 8.6.1.2
     # Most of them are null for EMV-CAP so we only check if
@@ -430,7 +432,8 @@ def dol_filling(tlv_dol, mode, transaction_value=0,
             data = '00' * t.L
             if t == 0x8A:
                 # Authorization Response Code:
-                if mode == 'MAESTRO' or mode == 'BANCONTACT':
+                if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
+                    mode == 'VISA') and country == "BE":
                     # Z1: Offline declined
                     data = 'Z1'.encode('hex').upper()
                 else:
@@ -438,42 +441,44 @@ def dol_filling(tlv_dol, mode, transaction_value=0,
                     data = 'Z3'.encode('hex').upper()
             elif t == 0x95:
                 # Terminal verification results:
-                if mode == 'MAESTRO' or mode == 'BANCONTACT':
+                if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
+                    mode == 'VISA') and country == "BE":
                     # Offline data authentication was not performed
                     # Merchand forced transaction online
                     data = '8000000800'
                 else:
                     # Offline data authentication was not performed
                     data = '8000000000'
-            elif t == 0x9A and (mode == 'DPA' or mode == 'VISA'):
+            elif t == 0x9A and (mode == 'DPA' or \
+                (mode == 'VISA' and not country == "BE")):
                 data = '010101'
             elif t == 0x9F02 and transaction_value != 0:
                 data = '%%0%ii' % (t.L * 2) % transaction_value
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
-                if mode == 'MAESTRO' or mode == 'BANCONTACT':
-                  # 00 = Fail CVM Processing
-                  #      - Fail cardholder verification if CVM is unsucces...
-                  # 00 = Always
-                  # 00 = Unknown (for example, for signature)
-                    data = '000000'
-                else:
+                if mode == 'CAP' or mode == 'DPA':
                   # 01 = ICC Plain PIN verification
                   #      - Fail cardholder verification if...
                   # 00 = Always
                   # 02 = Successful (e.g. for offline PIN)
                     data = '010002'
+                else:
+                  # 00 = Fail CVM Processing
+                  #      - Fail cardholder verification if CVM is unsucces...
+                  # 00 = Always
+                  # 00 = Unknown (for example, for signature)
+                    data = '000000'
             elif t == 0x9F35:
                 # terminal type
                 # in [schouwenaar] it's in cdol rather than pdol
-                if mode == 'MAESTRO' or mode == 'BANCONTACT':
-                  # 3  = operated by cardholder
-                  # 7  = ??
-                    data = '37'
-                else:
+                if mode == 'CAP' or mode == 'DPA':
                   # 3  = operated by cardholder
                   # 4  = Unattended, online only
                     data = '34'
+                else:
+                  # 3  = operated by cardholder
+                  # 7  = ??
+                    data = '37'
             elif t == 0x9F37 and unpredictable_number != 0:
                 data = '%%0%ii' % (t.L * 2) % unpredictable_number
             assert len(data) / 2 == t.L

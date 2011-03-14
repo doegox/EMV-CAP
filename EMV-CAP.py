@@ -450,30 +450,29 @@ for f in files:
             tlv_cdol2 = aef_data_template.get(0x8D)
 if psn_to_be_used:
     assert hex_psn
+
+# Belgian cards will nead specific tuning:
+if isinstance(cardholder_nationality, TLV) and \
+   cardholder_nationality.V == "0056" and \
+   isinstance(df07, TLV) and \
+   df07.V.decode('hex')[:6] == "BKS056":
+    country = "BE"
+else:
+    country = "any"
+
 if hex_ipb is False:
     print 'IPB not found'
-    if current_app['mode'] == 'VISA':
-        if isinstance(cardholder_nationality, TLV) and \
-           cardholder_nationality.V == "0056" and \
-           isinstance(df07, TLV) and \
-           df07.V.decode('hex')[:6] == "BKS056":
-            print 'Using default Belgian IPB function'
-            hex_ipb = "IPB_BE"
-        else:
-            print 'Using default VISA IPB'
-            hex_ipb = "0000FFFFFF0000000000000000000020B938"
-    elif current_app['mode'] == 'MAESTRO':
-        # TODO all MAESTRO use this filter or only BE??
+    if country == "BE":
         print 'Using default Belgian IPB function'
         hex_ipb = "IPB_BE"
-    elif current_app['mode'] == 'BANCONTACT':
-        print 'Using default Belgian IPB function'
-        hex_ipb = "IPB_BE"
+    elif current_app['mode'] == 'VISA':
+        print 'Using default VISA IPB'
+        hex_ipb = "0000FFFFFF0000000000000000000020B938"
     else:
         print 'Sorry, at the moment we don\'t know how to handle',
         print 'absence of IPB'
         sys.exit()
-elif current_app['mode'] == 'BANCONTACT':
+elif current_app['mode'] == 'BANCONTACT' and country == "BE":
     print 'Forcing default Belgian IPB function even if IPB found!'
     hex_ipb = "IPB_BE"
 assert tlv_cdol1
@@ -525,8 +524,8 @@ if args.mode == 1 and len(args.mdata) == 1:
     # TODO for ABN-AMRO NL there is apparently a scrambling of UN,
     # cf [schouwenaar] annex B
 
-cdol1_data = dol_filling(tlv_cdol1, current_app['mode'], transaction_value, \
-    unpredictable_number, debug=args.debug)
+cdol1_data = dol_filling(tlv_cdol1, current_app['mode'], country, \
+    transaction_value, unpredictable_number, debug=args.debug)
 if cdol1_data is None:
     sys.exit()
 CAPDU = '80AE8000%02X%s' % (len(cdol1_data) / 2, cdol1_data)
@@ -560,8 +559,8 @@ if args.verbose:
 # Generate Application Cryptogram AAC
 if args.verbose:
     print 'Generate Application Cryptogram AAC...'
-cdol2_data = dol_filling(tlv_cdol2, current_app['mode'], transaction_value, \
-    unpredictable_number, debug=args.debug)
+cdol2_data = dol_filling(tlv_cdol2, current_app['mode'], country, \
+    transaction_value, unpredictable_number, debug=args.debug)
 if cdol2_data is None:
     sys.exit()
 CAPDU = '80AE0000%02X%s' % (len(cdol2_data) / 2, cdol2_data)
