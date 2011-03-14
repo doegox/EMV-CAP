@@ -1,48 +1,23 @@
 #!/bin/bash
 
-echo Test1
-./EMV-CAP.py -m1 -r foo:debit |\
-  grep ': 23790240$' || echo FAIL
+function EMV-CAP {
+    # $1: CARD $2: OTP $3: DATA (optional)
+    echo "TEST $1 $3"
+    ./EMV-CAP.py -m1 $3 -r foo:$1 |\
+      grep ": $2\$" || echo "****** FAIL ******"
+}
 
-echo Test2
-./EMV-CAP.py -m1 -r foo:debit 1234 |\
-  grep ': 23580039$' || echo FAIL
+EMV-CAP cap_be           23790240
+EMV-CAP debit            23580039 1234
+EMV-CAP maestro_be       53780079
+EMV-CAP visa_dpa_be      19814125
+EMV-CAP visa_dpa_fr      34656023
+EMV-CAP visa_cleo_fr    102823328
+EMV-CAP cap_abnamro_nl   34998891 24661140
+EMV-CAP cap_fc09_uk       4822527 12345678
+EMV-CAP bancontact_be    53780079
+EMV-CAP eid_pt            8669448
+EMV-CAP visa_be          53780079
 
-echo Test3
-./EMV-CAP.py -m1 -r foo:maestro_be |\
-  grep ': 1179700$' || echo FAIL
-
-echo Test4
-./EMV-CAP.py -m1 -r foo:visa_dpa_be |\
-  grep ': 19814125$' || echo FAIL
-
-echo Test5
-./EMV-CAP.py -m1 -r foo:visa_dpa_fr |\
-  grep ': 34656023$' || echo FAIL
-
-echo Test6
-./EMV-CAP.py -m1 -r foo:visa_cleo_fr |\
-  grep ': 102823328$' || echo FAIL
-
-#echo Test7
-#./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d
-
-echo Test8
-./EMV-CAP.py -m1 24661140 -r foo:cap_abnamro_nl |\
-  grep ': 34998891$' || echo FAIL
-
-echo Test9
-./EMV-CAP.py -m1 12345678 -r foo:cap_fc09_uk |\
-  grep ': 4822527$' || echo FAIL
-
-echo Test10
-./EMV-CAP.py -L -r foo:pse_uk |\
-  grep 'LINK' || echo FAIL
-
-echo Test11
-./EMV-CAP.py -m1 -r foo:bancontact_be |\
-  grep ': 36251248$' || echo FAIL
-
-echo Test12
-./EMV-CAP.py -m1 -r foo:eid_pt |\
-  grep ': 8669448$' || echo FAIL
+# ./EMV-CAP.py -L -r foo:pse_uk
+# ./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d
