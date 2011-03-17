@@ -24,7 +24,7 @@ def MyConnectFoo(reader_match, debug=False):
         # !! don't modify keyword of this trace "debit"
         # as it's a reference in the published article
         # Note that "cap_be" is defined below as alias for "debit"
-        msgs_debit = {
+        msgs_cap_be = {
           'atr':
               '3B67000000000000009000',
           '00A4040007A0000000048002':
@@ -58,7 +58,6 @@ def MyConnectFoo(reader_match, debug=False):
               '77269F2701009F360200599F26086AC5D81B1BDE0C9A9F100F0601560325' +\
               'A00007010300000100029000',
         }
-        msgs_cap_be = msgs_debit
         # Example of a Belgian debit card
         # using Belgian Vasco810
         # forcing application...
