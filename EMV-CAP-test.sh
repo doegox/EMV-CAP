@@ -19,8 +19,8 @@ EMV-CAP cap_fc09_uk       4822527 m1 12345678
 EMV-CAP bancontact_be    53780079 m1
 EMV-CAP eid_pt            8669448 m1
 EMV-CAP visa_be          53780079 m1
-EMV-CAP cap_rabo1_nl      7986951 m1
-EMV-CAP cap_rabo2_nl      8180460 m2 0530026806
+EMV-CAP cap_rabo1_nl     07986951 m1
+EMV-CAP cap_rabo2_nl     08180460 m2 0530026806
 
 # ./EMV-CAP.py -L -r foo:pse_uk
 # ./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d

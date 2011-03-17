@@ -601,3 +601,6 @@ else:
     otp = generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, \
         debug=args.debug)
 print 'Response: %i' % otp
+if len("%i" % i) < 8:
+    print 'WARNING: some banks want to see exactly 8 digits\nso you may have to use the following response instead:'
+    print 'Response: %08i' % otp
