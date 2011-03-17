@@ -311,6 +311,7 @@ def MyConnectFoo(reader_match, debug=False):
               '77299F2701009F3602004E9F260896F166E11152A46B9F10120012250003' +\
               '420000000000000000000000FF9000',
         }
+        # Using random reader
         # Application: A0000000048002 SecureCode Aut
         # M1 challenge=nothing, OTP=07986951
         # ./EMV-CAP.py -m1 -r foo:cap_rabo1_nl
@@ -336,6 +337,7 @@ def MyConnectFoo(reader_match, debug=False):
               '77299F2701009F360200799F26085F547081592117429F10120C10250003' +\
               '440000000000000000000000FF9000',
         }
+        # Using random reader
         # Application: A0000000048002 SecureCode Aut
         # M2+TDS challenge=0530026806, OTP=08180460
         # ./EMV-CAP.py -m2 0530026806 -r foo:cap_rabo2_nl
