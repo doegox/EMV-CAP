@@ -372,10 +372,6 @@ if 0xA5 in fci_template:
                 fci_issuer_discretionary_data.get(0x9F55)
             psn_to_be_used = \
                 (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
-            if psn_to_be_used:
-                print 'Warning: card tells to use PSN but this was never',
-                print 'tested, please report success/failure to developers,',
-                print 'thanks!'
         if 0x5F2C in fci_issuer_discretionary_data:
             cardholder_nationality = \
                 fci_issuer_discretionary_data.get(0x5F2C)
@@ -440,6 +436,11 @@ for f in files:
         aef_data_template = parsedRAPDU[parsedRAPDU.index(0x70)]
         if 0x5F34 in aef_data_template:
             hex_psn = aef_data_template.get(0x5F34).V
+        if 0x9F55 in aef_data_template:
+            issuer_authentication_flag = \
+                aef_data_template.get(0x9F55)
+            psn_to_be_used = \
+                (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
             if args.verbose:
