@@ -376,6 +376,8 @@ TLVdict = {
     0x9F26: {'name': 'Application Cryptogram (AC)', },
     0x9F27: {'name': 'cryptogram information data', },
     0x9F32: {'name': 'Issuer Public Key Exponent', },
+    0x9F33: {'name': 'Terminal Capabilities',
+             'known_in_dol': True},
     0x9F34: {'name': 'cardholder verification method (cvm) results',
              'known_in_dol': True},
     0x9F35: {'name': 'terminal type',
@@ -389,9 +391,7 @@ TLVdict = {
     0x9F40: {'name': 'Additional Terminal Capabilities',
             # Indicates the data input and output capabilities of the terminal
             # (see Annex A3 in Book 4 [3])
-            # Seen in PDOL of UBS Maestro, but don't know how to fill
-            # those 5 bytes for EMV-CAP
-            # 'known_in_pdol': True,
+             'known_in_dol': True,
             },
     0x9F42: {'name': 'application currency code', },
     0x9F44: {'name': 'application currency exponent',
@@ -454,6 +454,14 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
                 data = '010101'
             elif t == 0x9F02 and transaction_value != 0:
                 data = '%%0%ii' % (t.L * 2) % transaction_value
+            elif t == 0x9F33:
+                # terminal capabilities
+                # 20 = Card Data Input Capability
+                #      - IC with contacts
+                # 80 = CVM Capability
+                #      - Plaintext PIN for offline ICC verification
+                # 00 = Security Capability
+                data = '208000'
             elif t == 0x9F34:
                 # cardholder verification method (cvm) results
                 if mode == 'CAP' or mode == 'DPA':
@@ -471,7 +479,8 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
             elif t == 0x9F35:
                 # terminal type
                 # in [schouwenaar] it's in cdol rather than pdol
-                if mode == 'CAP' or mode == 'DPA':
+                if mode == 'CAP' or mode == 'DPA' or \
+                   (mode == 'MAESTRO' and country != 'BE'):
                   # 3  = operated by cardholder
                   # 4  = Unattended, online only
                     data = '34'
@@ -509,8 +518,8 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
     #          /printing-bit-representation-of-numbers-in-python
     binary = lambda n: n > 0 and binary(n >> 1) + [int(n & 1)] or []
     # Note that created binary lists are.
-    bin_data = binary(int(hex_data, 16))
-    bin_ipb = binary(int(ipb, 16))
+    bin_data = binary(int("01" + hex_data, 16))[1:]
+    bin_ipb = binary(int("01" + ipb, 16))[1:]
     # Left trim bin_data to same length as bin_ipb
     bin_data = bin_data[len(bin_data) - len(bin_ipb):]
     if debug:
