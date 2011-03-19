@@ -440,7 +440,7 @@ for f in files:
             issuer_authentication_flag = \
                 aef_data_template.get(0x9F55)
             psn_to_be_used = \
-                (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
+                (ord(issuer_authentication_flag.V.decode('hex')[0]) & 0x40) != 0
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
             if args.verbose:
@@ -601,6 +601,6 @@ else:
     otp = generate_otp(hex_cid, hex_atc, hex_ac, hex_iad, hex_ipb, \
         debug=args.debug)
 print 'Response: %i' % otp
-if len("%i" % i) < 8:
+if len("%i" % otp) < 8:
     print 'WARNING: some banks want to see exactly 8 digits\nso you may have to use the following response instead:'
     print 'Response: %08i' % otp
