@@ -84,7 +84,7 @@ def MyListReaders():
     except smartcard.pcsc.PCSCExceptions.EstablishContextException:
         print 'Warning: cannot connect to PC/SC daemon!'
     print 'foo: provides fake reader and card',
-    print 'for demo/debug purposes (PIN=1234)'
+    print 'for demo/debug purposes'
     return
 
 
