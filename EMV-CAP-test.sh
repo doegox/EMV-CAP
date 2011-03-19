@@ -21,6 +21,6 @@ EMV-CAP eid_pt            8669448 m1
 EMV-CAP visa_be          53780079 m1
 EMV-CAP cap_rabo1_nl     07986951 m1
 EMV-CAP cap_rabo2_nl     08180460 m2 0530026806
-
+EMV-CAP maestro_lu       75176930639874 m1
 # ./EMV-CAP.py -L -r foo:pse_uk
 # ./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d
