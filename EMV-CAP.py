@@ -152,6 +152,10 @@ def MyConnect(reader_match=None, debug=False):
 
 def myTransmit(connection, CAPDU, debug=False, maskpin=True):
     fetch_more = False
+    # In T=1 mode, add Le=00 in APDUs with data to get directly an answer
+    if connection.getProtocol() == connection.T1_protocol and\
+       len(CAPDU)/2 > 5:
+        CAPDU += "00"
     if debug:
         if maskpin and CAPDU[:4] == "0020":
             print "CAPDU:        " + CAPDU[:12] +\
