@@ -25,6 +25,8 @@ def MyConnectFoo(reader_match, debug=False):
         # as it's a reference in the published article
         # Note that "cap_be" is defined below as alias for "debit"
         msgs_cap_be = {
+          'T':
+              0,
           'atr':
               '3B67000000000000009000',
           '00A4040007A0000000048002':
@@ -65,6 +67,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=53780079
         # ./EMV-CAP.py -m1 -r foo:maestro_be
         msgs_maestro_be = {
+          'T':
+              0,
           'atr':
               '3B701100FF',
           '00A4040007A0000000043060':
@@ -98,6 +102,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=53780079
         # ./EMV-CAP.py -m1 -r foo:bancontact_be
         msgs_bancontact_be = {
+          'T':
+              0,
           'atr':
               '3B701100FF',
           '00A4040008D056000666111010':
@@ -130,6 +136,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=19814125
         # ./EMV-CAP.py -m1 -r foo:visa_dpa_be
         msgs_visa_dpa_be = {
+          'T':
+              0,
           'atr':
               '3B67000000000000009000',
           '00A4040007A0000000038002':
@@ -161,6 +169,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=53780079
         # ./EMV-CAP.py -m1 -r foo:visa_be
         msgs_visa_be = {
+          'T':
+              0,
           'atr':
               '3B67000000000000009000',
           '00A4040007A0000000031010':
@@ -197,6 +207,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=34656023
         # ./EMV-CAP.py -m1 -r foo:visa_dpa_fr
         msgs_visa_dpa_fr = {
+          'T':
+              0,
           'atr':
               '3B65000065046C9000',
           '00A4040007A0000000038002':
@@ -224,6 +236,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=102823328
         # ./EMV-CAP.py -m1 -r foo:visa_cleo_fr
         msgs_visa_cleo_fr = {
+          'T':
+              0,
           'atr':
               '3B6500002063CB6A00',
           '00A4040007A0000000031010':
@@ -250,6 +264,8 @@ def MyConnectFoo(reader_match, debug=False):
         # NOT WORKING as we don't know IPB neither obtained OTP
         # ./EMV-CAP.py -m1 -r foo:visa_rosa_sk -v -d
         msgs_visa_rosa_sk = {
+          'T':
+              0,
           'atr':
               '3BE900008121455649535F494E46200678',
           '00A4040007A0000000032010':
@@ -278,6 +294,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=24661140, OTP=34998891
         # ./EMV-CAP.py -m1 24661140 -r foo:cap_abnamro_nl
         msgs_cap_abnamro_nl = {
+          'T':
+              0,
           'atr':
               '3B',  # unknown
           '00A4040007A0000000048002':
@@ -315,6 +333,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=07986951
         # ./EMV-CAP.py -m1 -r foo:cap_rabo1_nl
         msgs_cap_rabo1_nl = {
+          'T':
+              0,
           'atr':
               '3B6700002920006F789000',
           '00A4040007A0000000048002':
@@ -341,6 +361,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M2+TDS challenge=0530026806, OTP=08180460
         # ./EMV-CAP.py -m2 0530026806 -r foo:cap_rabo2_nl
         msgs_cap_rabo2_nl = {
+          'T':
+              0,
           'atr':
               '3B6700002920006F789000',
           '00A4040007A0000000048002':
@@ -368,6 +390,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=12345678, OTP=4822527
         # ./EMV-CAP.py -m1 12345678 -r foo:cap_fc09_uk
         msgs_cap_fc09_uk = {
+          'T':
+              0,
           'atr':
               '3B',  # unknown
           '00A4040007A0000000048002':
@@ -390,6 +414,8 @@ def MyConnectFoo(reader_match, debug=False):
         # Application discovery with 1PAY.SYS.DDF01
         # ./EMV-CAP.py -L -r foo:pse_uk
         msgs_pse_uk = {
+          'T':
+              0,
           'atr':
               '3B',  # unknown
           '00A404000E315041592E5359532E4444463031':
@@ -408,6 +434,8 @@ def MyConnectFoo(reader_match, debug=False):
         # M1 challenge=nothing, OTP=8669448
         # ./EMV-CAP.py -m1 -r foo:eid_pt
         msgs_eid_pt = {
+          'T':
+              0,
           'atr':
               '3B7D95000080318065B08311C0A983009000',
           '00A4040007A0000000048002':
@@ -434,12 +462,14 @@ def MyConnectFoo(reader_match, debug=False):
         # Note that Vasco810 fails displaying an OTP
         # ./EMV-CAP.py -m1 -r foo:maestro_lu
         msgs_maestro_lu = {
+          'T':
+              1,
           'atr':
               '3BFF1800FF8131FE45656311086601560011875001220620FE',
-          '00A4040007A0000000043060':
+          '00A4040007A000000004306000':
               '6F268407A0000000043060A51B50074D61657374726F8701009F380C9F33' +\
               '039F1A029F35019F40059000',
-          '80A800000D830B2080000000340000000000':
+          '80A800000D830B208000000034000000000000':
               '771282021800940C0802020008060600080B0B009000',
           '00B2020C00':
               '70258C189F02069F030695055F2A029A039C019F37049F4C089F45028D09' +\
@@ -450,13 +480,14 @@ def MyConnectFoo(reader_match, debug=False):
               '70308E0A000000000000000001039F5507800100913E20109F56120000FF' +\
               'FFFFFFFF00000000000000FF00003E9F0702FF009000',
           '80AE800025000000000000000000000000800000000000000000000000000000' +\
-              '00000000000000000000':
+              '0000000000000000000000':
               '771E9F2701009F360200029F260822FBF1F8FAE371979F10070091030038' +\
               '01049000',
           '80AE00001F000000000000000000000000000000005A33800000000000000000' +\
-              '00000000': # fake
-              '77009000', # fake
+              '0000000000':  # fake
+              '77009000',    # fake
         }
+
         def __init__(self, card='debit'):
             assert hasattr(self, 'msgs_' + card)
             self.msgs = getattr(self, 'msgs_' + card)
@@ -478,6 +509,17 @@ def MyConnectFoo(reader_match, debug=False):
 
         def getATR(self):
             return hex2lint(self.msgs['atr'])
+
+        T0_protocol = 1
+        T1_protocol = 2
+
+        def getProtocol(self):
+            if self.msgs['T'] == 0:
+                return self.T0_protocol
+            elif self.msgs['T'] == 1:
+                return self.T1_protocol
+            else:
+                raise
 
     if len(reader_match) > 4:
         return ConnectFooClass(reader_match[4:])

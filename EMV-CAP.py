@@ -150,12 +150,24 @@ def MyConnect(reader_match=None, debug=False):
     return connection
 
 
-def myTransmit(connection, CAPDU, debug=False, maskpin=True):
+def myTransmit(connection, CAPDU, debug=False, maskpin=True,
+               force_nodata=False):
     fetch_more = False
-    # In T=1 mode, add Le=00 in APDUs with data to get directly an answer
-    if connection.getProtocol() == connection.T1_protocol and\
-       len(CAPDU)/2 > 5:
-        CAPDU += "00"
+    # In T=0 mode, add P3=00 if there is no P3
+    if connection.getProtocol() == connection.T0_protocol:
+        if (len(CAPDU) / 2) <= 4:
+            CAPDU += "00"
+    # In T=1 mode, add Le=00 when we expect data
+    # We try to guess if the command expects data (default) or not
+    # but you can use arg force_nodata to tell cmd doesn't expect data in resp
+    elif connection.getProtocol() == connection.T1_protocol:
+        if force_nodata:
+            pass
+        # PinVerify, no data expected
+        elif CAPDU[2:4] == "20":
+            pass
+        else:
+            CAPDU += "00"
     if debug:
         if maskpin and CAPDU[:4] == "0020":
             print "CAPDU:        " + CAPDU[:12] +\
@@ -293,7 +305,7 @@ if len(RAPDU) != 0:
     p1 = 0x01
     if args.verbose:
         print 'Read record %02X of SFI %02X...' % (record, sfi)
-    CAPDU = '00B2%02X%02X00' % (p1, p2)
+    CAPDU = '00B2%02X%02X' % (p1, p2)
     (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
     parsedRAPDU = TLVparser(RAPDU)
     if args.debug:
@@ -428,7 +440,7 @@ for f in files:
         p1 = record
         if args.verbose:
             print 'Read record %02X of SFI %02X...' % (record, sfi)
-        CAPDU = '00B2%02X%02X00' % (p1, p2)
+        CAPDU = '00B2%02X%02X' % (p1, p2)
         (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
         # For simulation we skip some files
         if hasattr(connection, 'foo') and len(RAPDU) == 0:
@@ -444,7 +456,8 @@ for f in files:
             issuer_authentication_flag = \
                 aef_data_template.get(0x9F55)
             psn_to_be_used = \
-                (ord(issuer_authentication_flag.V.decode('hex')[0]) & 0x40) != 0
+                (ord(issuer_authentication_flag.V.decode('hex')[0]) & 0x40)\
+                != 0
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
             if args.verbose:
@@ -486,7 +499,7 @@ assert tlv_cdol2
 # ------------------------------------------------------------------------
 # Get PIN Try Counter
 # From book, ch 6.6.4
-CAPDU = '80CA9F1700'
+CAPDU = '80CA9F17'
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 parsedRAPDU = TLVparser(RAPDU)
 if args.debug:
@@ -606,5 +619,6 @@ else:
         debug=args.debug)
 print 'Response: %i' % otp
 if len("%i" % otp) < 8:
-    print 'WARNING: some banks want to see exactly 8 digits\nso you may have to use the following response instead:'
+    print 'WARNING: some banks want to see exactly 8 digits'
+    print 'so you may have to use the following response instead:'
     print 'Response: %08i' % otp
