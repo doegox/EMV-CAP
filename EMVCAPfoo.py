@@ -18,12 +18,9 @@ def MyConnectFoo(reader_match, debug=False):
         # using Belgian Vasco810
         # Application: A0000000048002 SecureCode Aut
         # M1 challenge=nothing, OTP=23790240
-        # ./EMV-CAP.py -m1 -r foo:debit
+        # ./EMV-CAP.py -m1 -r foo:cap_be
         # M1 challenge=1234, OTP=23580039
-        # ./EMV-CAP.py -m1 -r foo:debit 1234
-        # !! don't modify keyword of this trace "debit"
-        # as it's a reference in the published article
-        # Note that "cap_be" is defined below as alias for "debit"
+        # ./EMV-CAP.py -m1 -r foo:cap_be 1234
         msgs_cap_be = {
           'T':
               0,
