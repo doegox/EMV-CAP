@@ -44,6 +44,11 @@
 # IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGES.
 
+# Version 1.1
+#
+# History:
+#   1.1: add hack to support ACR38U bug
+#   1.0: initial version
 
 # All refs to "book" are from "Implementing Electronic Card Payment Systems"
 # by Cristian Radu
@@ -53,6 +58,9 @@ import argparse
 from EMVCAPfoo  import *
 from EMVCAPcore import *
 
+# Hack for bogus reader
+# Do not change it yourself, the code will detect it automatically
+hack_ACR38U = False
 
 def AreYouSure():
     print """
@@ -122,6 +130,10 @@ def MyConnect(reader_match=None, debug=False):
     except:
         print 'Fail connecting to', reader
         return None
+    if repr(reader).find('ACR38U') != -1:
+        # Hack for bogus reader
+        global hack_ACR38U
+        hack_ACR38U = True
     try:
         connection.connect()
     except smartcard.Exceptions.CardConnectionException:
@@ -152,7 +164,6 @@ def MyConnect(reader_match=None, debug=False):
 
 def myTransmit(connection, CAPDU, debug=False, maskpin=True,
                force_nodata=False):
-    fetch_more = False
     # In T=0 mode, add P3=00 if there is no P3
     if connection.getProtocol() == connection.T0_protocol:
         if (len(CAPDU) / 2) <= 4:
@@ -177,19 +188,37 @@ def myTransmit(connection, CAPDU, debug=False, maskpin=True,
     (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
     if debug:
         print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
+
+    if (sw1 != 0x61) and (sw1 != 0x6c):
+        return (RAPDU, sw1, sw2)
+
     if sw1 == 0x61:  # More bytes available
+        if hack_ACR38U and (((sw2 + 6) % 64) == 0):
+            sw2-=1
         CAPDU = '00C00000' + ("%02X" % sw2)
-        fetch_more = True
+
     if sw1 == 0x6c:  # Wrong length
         CAPDU = CAPDU[:4 * 2] + ("%02X" % sw2)
-        fetch_more = True
-    if fetch_more:
-        if debug:
-            print "CAPDU:        " + CAPDU
-        (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
-        if debug:
-            print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
-    return (RAPDU, sw1, sw2)
+
+    if debug:
+        print "CAPDU:        " + CAPDU
+    (RAPDU, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
+    if debug:
+        print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDU))
+
+    if (sw1 != 0x61) and (sw1 != 0x6c):
+        return (RAPDU, sw1, sw2)
+
+    if sw1 == 0x61:  # More bytes available
+        CAPDU = '00C00000' + ("%02X" % sw2)
+
+    if debug:
+        print "CAPDU:        " + CAPDU
+    (RAPDUtmp, sw1, sw2) = connection.transmit(hex2lint(CAPDU))
+    if debug:
+        print "RAPDU(%02X %02X): %s" % (sw1, sw2, lint2hex(RAPDUtmp))
+
+    return (RAPDU + RAPDUtmp, sw1, sw2)
 
 parser = argparse.ArgumentParser(description='EMV-CAP calculator',
     formatter_class=argparse.RawDescriptionHelpFormatter,
