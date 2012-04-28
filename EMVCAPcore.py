@@ -132,7 +132,9 @@ ApplicationsList = [
      'AID':'A0000002771010',        'onVasco810?':False},
     {'name':'ZKAGirocard',          'description':'ZKAGirocard',
      'AID':'A0000003591010028001',  'onVasco810?':False},
-
+    # French CB
+    {'name':'Carte Bleue',          'description':'Carte Bleue',
+     'AID':'A0000000421010',        'onVasco810?':False},
     # From emv-cards_and_internet_banking_-_michael_schouwenaar.pdf
     # special selects on few files?
     # BCA4000002 2901		(?)
