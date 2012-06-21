@@ -369,6 +369,8 @@ for app in ApplicationsList:
     if len(RAPDU) != 0:
         if current_app is None:
             current_app = app
+        elif current_app['onVasco810?'] is False and app['onVasco810?'] is True:
+            current_app = app
         if args.verbose:
             print "Application detected: " + app['description']
         if args.debug:
