@@ -1,7 +1,7 @@
 # coding: latin-1
 from EMVCAPcore import hex2lint
 
-# Copyright 2011
+# Copyright 2011, 2012
 #   Philippe Teuwen <phil@teuwen.org>
 #   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
 # Cette crŽation est mise ˆ disposition selon

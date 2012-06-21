@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: latin-1
 
-# Copyright 2011
+# Copyright 2011, 2012
 #   Philippe Teuwen <phil@teuwen.org>
 #   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
 # Cette création est mise à disposition selon
@@ -44,11 +44,11 @@
 # IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGES.
 
-# Version 1.1
+# Version:
+#   cf setup.py
 #
 # History:
-#   1.1: add hack to support ACR38U bug
-#   1.0: initial version
+#   cf git log
 
 # All refs to "book" are from "Implementing Electronic Card Payment Systems"
 # by Cristian Radu
