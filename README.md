@@ -7,3 +7,4 @@ Links
 =====
 
 * http://connect.ed-diamond.com/MISC/MISC-056/Banques-en-ligne-a-la-decouverte-d-EMV-CAP
+* https://sites.uclouvain.be/EMV-CAP/
