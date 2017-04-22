@@ -12,7 +12,7 @@
 
 from distutils.core import setup
 setup(name='EMVCAP',
-      version='1.4',
+      version='1.5',
       description='EMV-CAP device emulation script',
       long_description='This tool emulates an EMV-CAP device, to illustrate the article "Banque en ligne : a la decouverte d\'EMV-CAP" published in MISC, issue #56 and available online at http://www.unixgarden.com/index.php/misc/banques-en-ligne-a-la-decouverte-demv-cap',
       author='Philippe Teuwen & Jean-Pierre Szikora',

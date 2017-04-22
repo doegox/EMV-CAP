@@ -100,7 +100,7 @@ def MyConnect(reader_match=None, debug=False):
     if reader_match is not None and len(reader_match) >= 3 and \
        reader_match[:3] == "foo":
         return MyConnectFoo(reader_match, debug)
-    reader = None
+    readers_filtered = []
     try:
         readers = smartcard.System.readers()
         if len(readers) == 0:
@@ -113,33 +113,39 @@ def MyConnect(reader_match=None, debug=False):
     if reader_match is not None:
         try:
             reader_index = int(reader_match)
-            reader = readers[reader_index]
+            readers_filtered = [readers[reader_index]]
         except:
-            for r in readers:
-                if reader_match in repr(r):
-                    reader = r
-                    break
-        if reader is None:
+            readers_filtered = [r for r in readers if reader_match in repr(r)]
+        if len(readers_filtered) == 0:
             print 'error: no reader found according to option -r',
             print reader_match
             return None
-    if reader is None:
-        reader = readers[0]
-    try:
-        connection = reader.createConnection()
-    except:
-        print 'Fail connecting to', reader
-        return None
-    if repr(reader).find('ACR38U') != -1:
-        # Hack for bogus reader
-        global hack_ACR38U
-        hack_ACR38U = True
-    try:
-        connection.connect()
-    except smartcard.Exceptions.CardConnectionException:
+
+    if len(readers_filtered) == 0:
+        readers_filtered = readers
+
+    card_found = False
+    for reader in readers_filtered:
+        try:
+            connection = reader.createConnection()
+        except:
+            print 'Fail connecting to', reader
+            return None
+        if repr(reader).find('ACR38U') != -1:
+            # Hack for bogus reader
+            global hack_ACR38U
+            hack_ACR38U = True
+        try:
+            connection.connect()
+            card_found = True
+            break
+        except smartcard.Exceptions.CardConnectionException:
+            del(connection)
+
+    if not card_found:
         print 'No card found!'
-        del(connection)
         return None
+
     atr = connection.getATR()
     if (args.warmreset == 'yes') or \
         (args.warmreset == 'auto' and atr[0] == 0x3F):
