@@ -1,13 +1,13 @@
-# coding: latin-1
+# coding: utf-8
 from Crypto.Cipher import DES
 
 # Copyright 2011, 2012
 #   Philippe Teuwen <phil@teuwen.org>
 #   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
-# Cette création est mise à disposition selon
+# Cette cr√©ation est mise √† disposition selon
 # le Contrat Attribution-NoDerivs 2.0 Belgium
 # disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
-# ou par courrier postal à Creative Commons, 171 Second Street,
+# ou par courrier postal √† Creative Commons, 171 Second Street,
 # Suite 300, San Francisco, California 94105, USA.
 
 # Little conversion fcts
