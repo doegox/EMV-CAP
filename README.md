@@ -3,6 +3,10 @@ About
 
 This tool emulates an EMV-CAP device, to illustrate the article "Banque en ligne : à la decouverte d'EMV-CAP" published in MISC, issue #56 [1]
 
+Examples of EMV-CAP calculators:
+
+![EMV-CAP calculators](emvcap-calculators.jpg)
+
 Usage
 =====
 Command line help:
