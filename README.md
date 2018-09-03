@@ -71,4 +71,5 @@ Links
 =====
 
 [1] http://connect.ed-diamond.com/MISC/MISC-056/Banques-en-ligne-a-la-decouverte-d-EMV-CAP  
-[2] https://sites.uclouvain.be/EMV-CAP/
+[2] https://sites.uclouvain.be/EMV-CAP/  
+[3] Alternative: https://github.com/russss/python-emv
