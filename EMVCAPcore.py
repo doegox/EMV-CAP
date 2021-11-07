@@ -22,8 +22,7 @@ from Crypto.Cipher import DES
 
 
 def hex2lint(hex):
-    return bytes.fromhex(hex)
-
+     return [i for i in bytes.fromhex(hex)]
 
 def lint2hex(lint):
     return ''.join(["%02X" % i for i in lint])
