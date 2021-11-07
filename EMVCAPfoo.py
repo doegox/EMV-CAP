@@ -494,7 +494,7 @@ def MyConnectFoo(reader_match, debug=False):
               '77009000',    # fake
         }
 
-        def __init__(self, card='debit'):
+        def __init__(self, card='cap_be'):
             assert hasattr(self, 'msgs_' + card)
             self.msgs = getattr(self, 'msgs_' + card)
 

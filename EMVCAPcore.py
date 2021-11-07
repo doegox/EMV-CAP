@@ -22,7 +22,7 @@ from Crypto.Cipher import DES
 
 
 def hex2lint(hex):
-    return [ord(c) for c in hex.decode('hex')]
+    return bytes.fromhex(hex)
 
 
 def lint2hex(lint):
@@ -444,10 +444,10 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
                 if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
                     mode == 'VISA') and country == "BE":
                     # Z1: Offline declined
-                    data = 'Z1'.encode('hex').upper()
+                    data = 'Z1'.encode("ascii").upper()
                 else:
                     # Z3: Unable to go online (offline declined)
-                    data = 'Z3'.encode('hex').upper()
+                    data = 'Z3'.encode("ascii").upper()
             elif t == 0x95:
                 # Terminal verification results:
                 if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
@@ -561,7 +561,7 @@ def generate_otp_be(atc, ac, debug=False):
 
 
 def mix_tds(ac, mdata, debug=False):
-    des = DES.new(key=ac.decode('hex'), mode=DES.MODE_CBC, IV='\x00'*8)
+    des = DES.new(key=ac.decode("ascii"), mode=DES.MODE_CBC, IV='\x00'*8)
     data = 'F'.join([str(i) for i in mdata])
     if len(data) % 2:
         data += 'F'
@@ -570,4 +570,4 @@ def mix_tds(ac, mdata, debug=False):
     data += '00' * ((8 - ((len(data) / 2) % 8)) % 8)
     if debug:
         print('TDS:   ' + data)
-    return des.encrypt(data.decode('hex'))[-8:].encode('hex')
+    return des.encrypt(data.decode("ascii"))[-8:].encode("ascii")

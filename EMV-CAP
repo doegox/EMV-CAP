@@ -290,7 +290,7 @@ for i in args.mdata:
 
 if args.parsetlv:
     print(TLVparser(
-        [ord(c) for c in args.parsetlv.replace(":", "").decode('hex')]))
+        bytes.fromhex(args.parsetlv.replace(":", ""))))
     sys.exit()
 
 import smartcard
@@ -313,7 +313,7 @@ current_app = None
 if args.verbose:
     print('Trying PSE: accessing 1PAY.SYS.DDF01 file...')
 file = '1PAY.SYS.DDF01'
-CAPDU = '00A40400%02X' % len(file) + file.encode('hex')
+CAPDU = '00A40400%02X' % len(file) + file.encode('ascii').hex()
 (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
 if len(RAPDU) != 0:
     parsedRAPDU = TLVparser(RAPDU)
@@ -360,7 +360,7 @@ if len(RAPDU) != 0:
 if args.verbose:
     print('Trying list of pre-defined applications:')
 for app in ApplicationsList:
-    CAPDU = '00A40400' + ("%02X" % (len(app['AID']) / 2)) + app['AID']
+    CAPDU = '00A40400' + ("%02X" % (int)(len(app['AID']) / 2)) + app['AID']
     (RAPDU, sw1, sw2) = myTransmit(connection, CAPDU, args.debug)
     if len(RAPDU) != 0:
         if current_app is None:
@@ -414,7 +414,7 @@ if 0xA5 in fci_template:
             issuer_authentication_flag = \
                 fci_issuer_discretionary_data.get(0x9F55)
             psn_to_be_used = \
-                (ord(issuer_authentication_flag.V.decode('hex')) & 0x40) != 0
+                (bytes.fromhex(issuer_authentication_flag.V) & 0x40) != 0
         if 0x5F2C in fci_issuer_discretionary_data:
             cardholder_nationality = \
                 fci_issuer_discretionary_data.get(0x5F2C)
@@ -452,7 +452,7 @@ assert 0x77 in parsedRAPDU
 rsp_msg_template2 = parsedRAPDU[parsedRAPDU.index(0x77)]
 if 0x94 in rsp_msg_template2:
     application_file_locator = rsp_msg_template2.get(0x94)
-    raw_afl = application_file_locator.V.decode('hex')
+    raw_afl = bytes.fromhex(application_file_locator.V)
     for i in range(application_file_locator.L / 4):
         files.append([ord(x) for x in raw_afl[i * 4:i * 4 + 4]])
 
@@ -483,7 +483,7 @@ for f in files:
             issuer_authentication_flag = \
                 aef_data_template.get(0x9F55)
             psn_to_be_used = \
-                (ord(issuer_authentication_flag.V.decode('hex')[0]) & 0x40)\
+                (bytes.fromhex(issuer_authentication_flag.V)[0] & 0x40)\
                 != 0
         if 0x9F56 in aef_data_template:
             hex_ipb = aef_data_template.get(0x9F56).V
@@ -500,7 +500,7 @@ if psn_to_be_used:
 if isinstance(cardholder_nationality, TLV) and \
    cardholder_nationality.V == "0056" and \
    isinstance(df07, TLV) and \
-   df07.V.decode('hex')[:6] == "BKS056":
+   bytes.fromhex(df07.V)[:6] == "BKS056":
     country = "BE"
 else:
     country = "any"
