@@ -129,7 +129,7 @@ def MyConnect(reader_match=None, debug=False):
             connection.connect()
             card_found = True
             break
-        except smartcard.Exceptions.CardConnectionException:
+        except (smartcard.Exceptions.CardConnectionException, smartcard.Exceptions.NoCardException):
             del(connection)
 
     if not card_found:
