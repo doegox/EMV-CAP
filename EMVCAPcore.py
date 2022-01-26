@@ -498,7 +498,7 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
                     data = '37'
             elif t == 0x9F37 and unpredictable_number != 0:
                 data = '%%0%ii' % (t.L * 2) % unpredictable_number
-            assert len(data) / 2 == t.L
+            assert len(data) // 2 == t.L
             dol_data += data
             if debug:
                 print('Will use %s for tag %s' % (data, t.hex_T))
@@ -566,7 +566,7 @@ def mix_tds(ac, mdata, debug=False):
         data += 'F'
     # bit padding:
     data += '80'
-    data += '00' * ((8 - ((len(data) / 2) % 8)) % 8)
+    data += '00' * ((8 - ((len(data) // 2) % 8)) % 8)
     if debug:
         print('TDS:   ' + data)
     return des.encrypt(data.decode("ascii"))[-8:].encode("ascii")
