@@ -6,6 +6,22 @@ Examples of EMV-CAP calculators:
 
 ![EMV-CAP calculators](emvcap-calculators.jpg)
 
+# Requirements
+
+## Debian
+
+* `sudo apt install libpcsclite-dev`
+* `sudo pip install -r requirements.txt `
+
+## Mac OSX
+
+Tested with Yosemite 10.10.5
+
+* brew: see the [Brew homepage](https://brew.sh/) on how to install it
+* `sudo easy_install pip`
+* `brew install swig`
+* `sudo pip install -r requirements.txt`
+
 # Usage
 
 Command line help:
@@ -55,15 +71,6 @@ Examples:
     EMV-CAP -m2
     EMV-CAP -m2 1000 3101234567
 ```
-
-# Mac OSX support
-
-EMV-CAP also works on Mac OSX (tested with Yosemite 10.10.5), you will need to install few dependencies though (you need to have pip and brew installed as prerequesite):
-
-* brew: see the Brew homepage on how to install it
-* pip: ```$ sudo easy_install pip```
-* swig: ```$ brew install swig```
-* pycrypto and pyscard: ```$ sudo pip install pycrypto pyscard ```
 
 # Copyright and licensing terms
 
