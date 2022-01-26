@@ -1,16 +1,23 @@
 # coding: utf-8
 from Crypto.Cipher import DES
 
-# Copyright 2011, 2012
+# EMV-CAP device emulator. Version: cf setup.py
+#
+# Copyright (C) 2011-2022 EMC-CAP contributors. See "git log" for details.
+# Initial authors:
 #   Philippe Teuwen <phil@teuwen.org>
 #   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
-# Cette création est mise à disposition selon
-# le Contrat Attribution-NoDerivs 2.0 Belgium
-# disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
-# ou par courrier postal à Creative Commons, 171 Second Street,
-# Suite 300, San Francisco, California 94105, USA.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# See LICENSE.txt for the text of the GPL3 license.
 
+#-----------------------------------------------------------------------------
 # Little conversion fcts
+#-----------------------------------------------------------------------------
 # APDUs will be either hex strings or lists of integers
 
 

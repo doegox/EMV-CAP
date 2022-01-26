@@ -1,30 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Copyright 2011, 2012
+# EMV-CAP device emulator. Version: cf setup.py
+#
+# Copyright (C) 2011-2022 EMC-CAP contributors. See "git log" for details.
+# Initial authors:
 #   Philippe Teuwen <phil@teuwen.org>
 #   Jean-Pierre Szikora <jean-pierre.szikora@uclouvain.be>
-# Cette création est mise à disposition selon
-# le Contrat Attribution-NoDerivs 2.0 Belgium
-# disponible en ligne http://creativecommons.org/licenses/by-nd/2.0/be/
-# ou par courrier postal à Creative Commons, 171 Second Street,
-# Suite 300, San Francisco, California 94105, USA.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-# L'utilisation de ce logiciel pour des opérations financières réelles
-# peut entraîner un certain risque. En effet l'intérêt d'utiliser une
-# calculette est d'isoler votre carte bancaire des vilains malwares.
-# L'utiliser sur un lecteur non sécurisé, c'est risquer qu'un keylogger
-# intercepte votre PIN, qu'un malware accède aux informations de votre carte,
-# voire qu'il intercepte votre transaction pour la modifier ou qu'il procède
-# lui-même à ses propres transactions.
-
-# LIMITATION DE RESPONSABILITE
-# DANS LA MESURE AUTORISEE PAR LA LOI APPLICABLE, LE DONNEUR DE LICENCE NE
-# SERA EN AUCUN CAS RESPONSABLE A VOTRE EGARD, POUR QUELQUE PREJUDICE QUE
-# CE SOIT, DIRECT OU INDIRECT, MATERIEL OU MORAL, RESULTANT DE L'EXECUTION
-# DE LA PRESENTE LICENCE OU DE L'UTILISATION DE L'OEUVRE, MEME SI LE DONNEUR
-# DE LICENCE A ETE INFORME DE LA POSSIBILITE DE TELS PREJUDICES.
-
+# WARNING
+#
 # Using this software for real financial operations can lead to some risks.
 # Indeed advantage of using a standalone reader is is to isolate your banking
 # card from big bad malwares.
@@ -32,7 +22,7 @@
 # your PIN, a malware accesses to your card informations, or even intercepts
 # your transaction to modify it or operates its own transactions.
 
-# Limitation of Liability.
+# Limitation of Liability
 #
 # IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 # WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO CONVEYS THE PROGRAM,
@@ -43,12 +33,12 @@
 # OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN
 # IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGES.
-
-# Version:
-#   cf setup.py
 #
-# History:
-#   cf git log
+# See LICENSE.txt for the text of the GPL3 license.
+
+#-----------------------------------------------------------------------------
+# Main script
+#-----------------------------------------------------------------------------
 
 # All refs to "book" are from "Implementing Electronic Card Payment Systems"
 # by Cristian Radu
