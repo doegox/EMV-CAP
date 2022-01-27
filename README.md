@@ -117,4 +117,6 @@ SUCH DAMAGES.
 
 * http://connect.ed-diamond.com/MISC/MISC-056/Banques-en-ligne-a-la-decouverte-d-EMV-CAP
 * https://sites.uclouvain.be/EMV-CAP/
-* Alternative: https://github.com/russss/python-emv
+* Alternatives:
+  * https://github.com/russss/python-emv
+  * https://github.com/davidgfnet/card-cap-authenticator-android
