@@ -11,7 +11,7 @@ Examples of EMV-CAP calculators:
 ## Debian
 
 * `sudo apt install libpcsclite-dev`
-* `sudo pip install -r requirements.txt `
+* `sudo pip install -r requirements.txt`
 
 ## Mac OSX
 
@@ -66,7 +66,7 @@ Modes and data:
 Examples:
     EMV-CAP --listreaders
     EMV-CAP --listapps
-    EMV-CAP --listapps --debug --reader foo
+    EMV-CAP --listapps --debug --reader foo:cap_be
     EMV-CAP -m1 123456
     EMV-CAP -m2
     EMV-CAP -m2 1000 3101234567

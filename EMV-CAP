@@ -222,7 +222,7 @@ parser = argparse.ArgumentParser(description='EMV-CAP calculator',
 Examples:
     %(prog)s --listreaders
     %(prog)s --listapps
-    %(prog)s --listapps --debug --reader foo
+    %(prog)s --listapps --debug --reader foo:cap_be
     %(prog)s -m1 123456
     %(prog)s -m2
     %(prog)s -m2 1000 3101234567
