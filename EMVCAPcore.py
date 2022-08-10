@@ -22,7 +22,7 @@ from Crypto.Cipher import DES
 
 
 def hex2lint(hex):
-    return [ord(c) for c in hex.decode('hex')]
+    return list(bytes.fromhex(hex))
 
 
 def lint2hex(lint):
@@ -444,10 +444,10 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
                 if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
                     mode == 'VISA') and country == "BE":
                     # Z1: Offline declined
-                    data = 'Z1'.encode('hex').upper()
+                    data = b'Z1'.hex().upper()
                 else:
                     # Z3: Unable to go online (offline declined)
-                    data = 'Z3'.encode('hex').upper()
+                    data = b'Z3'.hex().upper()
             elif t == 0x95:
                 # Terminal verification results:
                 if (mode == 'MAESTRO' or mode == 'BANCONTACT' or \
@@ -502,11 +502,11 @@ def dol_filling(tlv_dol, mode, country="any", transaction_value=0,
             assert len(data) / 2 == t.L
             dol_data += data
             if debug:
-                print 'Will use %s for tag %s' % (data, t.hex_T)
+                print('Will use %s for tag %s' % (data, t.hex_T))
         else:
-            print 'Error I dont know how to handle tag %s in dol' % t.hex_T
-            print 'If you want to fill it with null value,',
-            print 'add a known_in_dol flag in TLVdict for that tag'
+            print('Error I dont know how to handle tag %s in dol' % t.hex_T)
+            print('If you want to fill it with null value,', end=' ')
+            print('add a known_in_dol flag in TLVdict for that tag')
             return None
     return dol_data
 
@@ -519,8 +519,8 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
         hex_data = ''
     hex_data += cid + atc + ac + iad
     if debug:
-        print 'Data:  ' + hex_data
-        print 'Filter:' + ipb
+        print('Data:  ' + hex_data)
+        print('Filter:' + ipb)
     # Right trim hex_data to same length as ipb:
     hex_data = hex_data[:len(ipb)]
     # From http://stackoverflow.com/questions/1054116\
@@ -532,8 +532,8 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
     # Left trim bin_data to same length as bin_ipb
     bin_data = bin_data[len(bin_data) - len(bin_ipb):]
     if debug:
-        print 'Data:  ' + ''.join([str(b) for b in bin_data])
-        print 'Filter:' + ''.join([str(b) for b in bin_ipb])
+        print('Data:  ' + ''.join([str(b) for b in bin_data]))
+        print('Filter:' + ''.join([str(b) for b in bin_ipb]))
     otp = 0
     debug_otp = ''
     for i in range(len(bin_ipb)):
@@ -543,7 +543,7 @@ def generate_otp(cid, atc, ac, iad, ipb, psn=None, debug=False):
         else:
             debug_otp += ' '
     if debug:
-        print 'OTP:   ' + debug_otp
+        print('OTP:   ' + debug_otp)
     return otp
 
 
@@ -561,13 +561,14 @@ def generate_otp_be(atc, ac, debug=False):
 
 
 def mix_tds(ac, mdata, debug=False):
-    des = DES.new(key=ac.decode('hex'), mode=DES.MODE_CBC, IV='\x00'*8)
+    des = DES.new(key=bytes.fromhex(ac), mode=DES.MODE_CBC, IV='\x00'*8)
     data = 'F'.join([str(i) for i in mdata])
     if len(data) % 2:
         data += 'F'
     # bit padding:
     data += '80'
-    data += '00' * ((8 - ((len(data) / 2) % 8)) % 8)
+    data += '00' * ((8 - ((len(data) // 2) % 8)) % 8)
     if debug:
-        print 'TDS:   ' + data
-    return des.encrypt(data.decode('hex'))[-8:].encode('hex')
+        print('TDS:   ' + data)
+    ret = des.encrypt(bytes.fromhex(data))[-8:]
+    return ret.hex()
