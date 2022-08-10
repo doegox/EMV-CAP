@@ -1,3 +1,3 @@
 argparse
-pycrypto
+pycryptodome
 pyscard
